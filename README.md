@@ -101,7 +101,7 @@ Needs Jellyfin **12.3** or newer.
 
 1. In Jellyfin, open **Dashboard > Plugins > Repositories** and add this one:
    ```
-   https://github.com/mmrmagno/jellyfin-plugin-streamfin/releases/latest/download/manifest.json
+   https://github.com/ItzDabbzz/jellyfin-plugin-streamfin/releases/latest/download/manifest.json
    ```
 2. Install **StreamFin** from the catalog (it is under Channels) and restart Jellyfin.
 3. Open **Dashboard > Plugins > StreamFin**, turn it on, and tick the users who are
