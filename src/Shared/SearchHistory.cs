@@ -20,6 +20,7 @@ public sealed class SearchHistory(ILibraryManager library)
         || item is MediaBrowser.Controller.Entities.Audio.MusicArtist or MediaBrowser.Controller.Entities.Audio.MusicAlbum or MediaBrowser.Controller.Entities.Audio.Audio
         && (id.StartsWith("artist/", StringComparison.Ordinal) || id.StartsWith("album/search/", StringComparison.Ordinal) || id.StartsWith("track/hit/", StringComparison.Ordinal)));
     public static bool IsHidden(BaseItem? item) => IsSearchResult(item) && item!.Tags.Contains(HiddenTag, StringComparer.Ordinal);
+    public static bool HasVisibleResults(IEnumerable<BaseItem> items) => items.Any(item => IsSearchResult(item) && !IsHidden(item));
     public static Guid[] Folders(ILibraryManager library) =>
         [library.GetNewItemId("searchAnime16", typeof(Folder)), library.GetNewItemId(FilmSearch.FolderKey, typeof(Folder)), library.GetNewItemId(MusicSearch.FolderKey, typeof(Folder))];
 

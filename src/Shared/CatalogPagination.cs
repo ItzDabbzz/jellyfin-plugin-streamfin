@@ -4,6 +4,17 @@ public sealed record CatalogSlice<T>(IReadOnlyList<T> Items, int Total);
 
 public static class CatalogPagination
 {
+    public static bool NeedsPageCard(int? limit) => limit is not > 0;
+
+    public static MediaBrowser.Controller.Channels.ChannelItemInfo? NextPage(string prefix, string category, int page, bool hasNext, int maxPage)
+        => hasNext && page < maxPage ? new()
+        {
+            Id = $"{prefix}/{category}/{page + 1}", Name = $"Next page ({page + 1})",
+            Type = MediaBrowser.Controller.Channels.ChannelItemType.Folder,
+            FolderType = MediaBrowser.Model.Channels.ChannelFolderType.Container,
+            Overview = "Continue browsing the next page of titles.", Tags = ["StreamFin"]
+        } : null;
+
     public static async Task<CatalogSlice<T>> SliceAsync<T>(int start, int limit, int pageSize, int maxPages,
         Func<int, Task<(IReadOnlyList<T> Items, int Total)>> load, CancellationToken ct)
     {

@@ -4,6 +4,18 @@ internal static class PaginationChecks
 {
     public static async Task RunAsync()
     {
+        Check(CatalogBrowser.IsBrowseAction("GetItemsByUserIdLegacy") && CatalogBrowser.IsBrowseAction("GetItems")
+            && CatalogBrowser.IsBrowseAction("GetChannelItems") && !CatalogBrowser.IsBrowseAction("GetItem"),
+            "catalog pagination handles the legacy user-items endpoint used by Jellyfin web");
+        Check(CatalogPagination.NeedsPageCard(null) && CatalogPagination.NeedsPageCard(0) && !CatalogPagination.NeedsPageCard(100),
+            "clients with unlimited page size retain an explicit next-page control");
+        var card = CatalogPagination.NextPage("catalog", "popular", 1, true, 1000);
+        Check(card?.Id == "catalog/popular/2" && card.Type == MediaBrowser.Controller.Channels.ChannelItemType.Folder
+            && card.FolderType == MediaBrowser.Model.Channels.ChannelFolderType.Container,
+            "fallback next page is a navigation folder, never a playable series");
+        Check(CatalogPagination.NextPage("list", "movies", 500, true, 500) is null
+            && CatalogPagination.NextPage("catalog", "popular", 1, false, 1000) is null,
+            "last pages never create a dead next-page link");
         var calls = new List<int>();
         Task<(IReadOnlyList<int> Items, int Total)> Load(int page)
         {

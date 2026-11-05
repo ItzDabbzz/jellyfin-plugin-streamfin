@@ -71,7 +71,8 @@ public sealed class ChannelAccessFilter(ILibraryManager library, IAuthorizationC
                 if (!await content.AllowsAsync(id, context.HttpContext.RequestAborted, cachedOnly: image)) { context.Result = new NotFoundResult(); return; }
             var currentAuth = await authorization.GetAuthorizationInfo(context.HttpContext);
             if (currentAuth.User is not null) await links.PrepareAsync(context, currentAuth.User, context.HttpContext.RequestAborted);
-            if (context.HttpContext.Request.Method == "GET" && context.ActionDescriptor is ControllerActionDescriptor { ActionName: "GetItems" or "GetChannelItems" })
+            if (context.HttpContext.Request.Method == "GET" && context.ActionDescriptor is ControllerActionDescriptor browseAction
+                && CatalogBrowser.IsBrowseAction(browseAction.ActionName))
             {
                 var parentId = context.ActionArguments.Where(p => p.Key.Equals("parentId", StringComparison.OrdinalIgnoreCase)
                     || p.Key.Equals("folderId", StringComparison.OrdinalIgnoreCase)).SelectMany(p => Identifiers(p.Value)).FirstOrDefault();
@@ -82,7 +83,7 @@ public sealed class ChannelAccessFilter(ILibraryManager library, IAuthorizationC
                 {
                     var auth = await authorization.GetAuthorizationInfo(context.HttpContext);
                     var start = int.TryParse(context.HttpContext.Request.Query["StartIndex"], out var offset) ? offset : 0;
-                    var limit = int.TryParse(context.HttpContext.Request.Query["Limit"], out var size) ? Math.Clamp(size, 1, 200) : 100;
+                    int? limit = int.TryParse(context.HttpContext.Request.Query["Limit"], out var size) && size > 0 ? Math.Min(size, 200) : null;
                     if (start < 0 || start >= (parent.ExternalId.StartsWith("catalog/", StringComparison.Ordinal) ? 30000 : 10000))
                     {
                         context.Result = new BadRequestObjectResult("Invalid catalog page.");
@@ -185,9 +186,18 @@ public sealed class ChannelAccessFilter(ILibraryManager library, IAuthorizationC
             return allowed ? await navigation.ResolveAsync(dto, auth?.User, context.HttpContext.RequestAborted) : dto;
         }
         var discoveryList = context.HttpContext.Items[SearchHistory.HiddenTag] is true;
-        async Task<bool> Visible(Guid id, bool listing = true) => !IsOurs(id) || (allowed
-            && (!listing || !discoveryList || !SearchHistory.IsHidden(library.GetItemById(id)))
-            && await content.AllowsAsync(id, context.HttpContext.RequestAborted));
+        async Task<bool> Visible(Guid id, bool listing = true)
+        {
+            if (!IsOurs(id)) return true;
+            if (!allowed) return false;
+            var item = library.GetItemById(id);
+            if (listing && discoveryList && SearchHistory.IsHidden(item)) return false;
+            // Keep the stored folder and descendants for progress/history; hide only its
+            // empty navigation tile, so searching can make it visible again immediately.
+            if (listing && item is Folder { ExternalId: "search" }
+                && !SearchHistory.HasVisibleResults(library.GetItemList(new InternalItemsQuery { ParentId = id, Recursive = false }))) return false;
+            return await content.AllowsAsync(id, context.HttpContext.RequestAborted);
+        }
         if (context.Result is ObjectResult result)
         {
             if (allowed) await content.PrefetchAsync(result.Value switch

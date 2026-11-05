@@ -29,7 +29,7 @@ public sealed class FilmChannel(TmdbCatalog catalog, FlixSource flix, StreamRela
     public static bool IsAvailable => Plugin.Instance?.Configuration is { Enabled: true, FilmEnabled: true } && TmdbCatalog.HasKey;
     public string Name => ChannelName;
     public string Description => "StreamFin · Browse movies and TV and stream them online.";
-    public string DataVersion => "streamfin-film-1-" + IsAvailable + "-" + (Plugin.Instance?.Configuration.CacheRevision ?? 0);
+    public string DataVersion => "streamfin-film-2-" + IsAvailable + "-" + (Plugin.Instance?.Configuration.CacheRevision ?? 0);
     public string HomePageUrl => "https://github.com/mmrmagno/jellyfin-plugin-streamfin";
     public ChannelParentalRating ParentalRating => ChannelParentalRating.GeneralAudience;
     public bool IsEnabledFor(string userId) => IsAvailable && Guid.TryParse(userId, out var id) && Plugin.Allows(id);
@@ -118,6 +118,7 @@ public sealed class FilmChannel(TmdbCatalog catalog, FlixSource flix, StreamRela
         {
             var data = await catalog.BrowseAsync(category, page, ct);
             var items = data.Items.Select((film, index) => { var item = Item(film, category); item.IndexNumber = index + 1; return item; }).ToList();
+            if (CatalogPagination.NextPage("list", category, page, data.HasNext, 500) is { } next) items.Add(next);
             return Result(items);
         }
         if (parts is ["tv", var scope, var showText] && int.TryParse(showText, out var showId))

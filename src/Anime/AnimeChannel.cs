@@ -23,7 +23,7 @@ public sealed class AnimeChannel(AniListCatalog catalog, SourceRegistry sources,
 {
     public string Name => "Anime";
     public string Description => "StreamFin · Browse anime and stream Japanese audio with English subtitles.";
-    public string DataVersion => "streamfin-5-" + SourceRegistry.CacheKey + "-" + AniListCatalog.PolicyKey + "-" + (Plugin.Instance?.Configuration.CacheRevision ?? 0);
+    public string DataVersion => "streamfin-6-" + SourceRegistry.CacheKey + "-" + AniListCatalog.PolicyKey + "-" + (Plugin.Instance?.Configuration.CacheRevision ?? 0);
     public string HomePageUrl => "https://github.com/mmrmagno/jellyfin-plugin-streamfin";
     public ChannelParentalRating ParentalRating => ChannelParentalRating.GeneralAudience;
     public bool IsEnabledFor(string userId) => Guid.TryParse(userId, out var id) && Plugin.Allows(id);
@@ -124,6 +124,7 @@ public sealed class AnimeChannel(AniListCatalog catalog, SourceRegistry sources,
                 item.IndexNumber = Array.IndexOf(data.Items.ToArray(), anime) + 1;
                 return item;
             }).ToList();
+            if (CatalogPagination.NextPage("catalog", category, page, data.HasNext, 1000) is { } next) items.Add(next);
             return Result(items);
         }
         if (parts is ["title", var scope, var animeText] && int.TryParse(animeText, out var animeId))

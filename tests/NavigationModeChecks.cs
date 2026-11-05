@@ -11,6 +11,11 @@ internal static class NavigationModeChecks
             Console.WriteLine("PASS: " + name);
         }
         Check(new Configuration().StreamingNavigationMode == "Channels", "existing installs retain channel navigation by default");
+        Check(!SearchHistory.HasVisibleResults([]), "empty search history does not show a Search results folder");
+        var found = new MediaBrowser.Controller.Entities.TV.Series { ExternalId = "title/search/1", Tags = [] };
+        Check(SearchHistory.HasVisibleResults([found]), "Search results becomes visible after a title is found");
+        found.Tags = [SearchHistory.HiddenTag];
+        Check(!SearchHistory.HasVisibleResults([found]), "clearing the last search result hides the empty folder again");
         Check(StreamingNavigation.NormalizeMode("Hub") == "Hub" && StreamingNavigation.NormalizeMode("Both") == "Both",
             "hub and combined navigation modes remain selectable");
         Check(new string?[] { null, "", "Channels", "unknown", "hub" }.All(mode => StreamingNavigation.NormalizeMode(mode) == "Channels"),

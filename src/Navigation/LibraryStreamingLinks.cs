@@ -27,7 +27,8 @@ public sealed class LibraryStreamingLinks(ILibraryManager library, StreamingNavi
     public async Task PrepareAsync(ActionExecutingContext context, User user, CancellationToken ct)
     {
         if (!Plugin.Allows(user.Id) || context.HttpContext.Request.Method != "GET"
-            || context.ActionDescriptor is not ControllerActionDescriptor { ActionName: "GetItems" }) return;
+            || context.ActionDescriptor is not ControllerActionDescriptor action
+            || action.ActionName is not ("GetItems" or "GetItemsByUserIdLegacy")) return;
         string Arg(string name)
         {
             var value = context.ActionArguments.FirstOrDefault(pair => pair.Key.Equals(name, StringComparison.OrdinalIgnoreCase)).Value;
