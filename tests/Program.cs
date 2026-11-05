@@ -4,6 +4,9 @@ using System.Text;
 using System.Text.RegularExpressions;
 using StreamFin;
 
+await MusicDiscoveryChecks.RunAsync();
+if (args.Contains("--music-discovery-only")) return;
+
 await PlaybackChecks.RunAsync();
 await PaginationChecks.RunAsync();
 await NavigationModeChecks.RunAsync();

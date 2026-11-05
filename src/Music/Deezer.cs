@@ -102,6 +102,14 @@ public static class Deezer
                 .OfType<MusicArtistPage>().DistinctBy(a => a.Id).Take(50).ToArray());
     }
 
+    // /chart/0 wraps tracks, albums and artists in the same data lists as a combined search.
+    // Preview/audio URLs and arbitrary provider links never become playable addresses.
+    public static MusicResults ParseChart(string json)
+    {
+        Check(json);
+        return ParseSearch(json);
+    }
+
     public static MusicRelease ParseRelease(string json)
     {
         using var document = JsonDocument.Parse(json);

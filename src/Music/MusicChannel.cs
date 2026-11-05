@@ -23,8 +23,8 @@ public sealed class MusicChannel(MusicCatalog catalog, MusicAudio sources, Music
     public const string ChannelName = "Music";
     public static bool IsAvailable => Plugin.Instance?.Configuration is { Enabled: true, MusicEnabled: true } && MusicCatalog.Api is not null;
     public string Name => ChannelName;
-    public string Description => "StreamFin · Search artists and albums and stream them in lossless FLAC.";
-    public string DataVersion => "streamfin-music-1-" + IsAvailable + "-" + (Plugin.Instance?.Configuration.CacheRevision ?? 0);
+    public string Description => "StreamFin · Browse popular artists, albums and songs, or use Jellyfin's search to find music online.";
+    public string DataVersion => "streamfin-music-2-" + IsAvailable + "-" + (Plugin.Instance?.Configuration.CacheRevision ?? 0);
     public string HomePageUrl => "https://github.com/mmrmagno/jellyfin-plugin-streamfin";
     public ChannelParentalRating ParentalRating => ChannelParentalRating.GeneralAudience;
     public bool IsEnabledFor(string userId) => IsAvailable && Guid.TryParse(userId, out var id) && Plugin.Allows(id);
@@ -104,13 +104,42 @@ public sealed class MusicChannel(MusicCatalog catalog, MusicAudio sources, Music
 
     private static readonly string[] ReleaseOrder = ["ALBUM", "EP", "SINGLE", "COMPILATION"];
 
+    public static IEnumerable<ChannelItemInfo> RootItems(bool discoveryEnabled)
+    {
+        if (discoveryEnabled)
+        {
+            yield return Folder("popular/artists", "Popular artists", "Explore artists from Deezer's current charts. Open an artist for albums, top tracks and radio.");
+            yield return Folder("popular/albums", "Popular albums", "Browse albums from Deezer's current charts. Open an album to choose songs.");
+            yield return Folder("popular/songs", "Popular songs", "Play songs from Deezer's current charts using your enabled music playback sources.");
+        }
+        yield return Folder("search", "Search results", "Use Jellyfin's search (magnifying glass) to find artists, albums and songs online. What you find appears here.");
+        yield return Folder("starred", "Starred", "Albums you mark as a favourite here, and albums and songs you star in a Subsonic app.");
+        yield return Folder("recent", "Recently played");
+    }
+
     private async Task<ChannelItemResult> BrowseAsync(string id, Guid user, CancellationToken ct)
     {
         if (id.EndsWith("/status", StringComparison.Ordinal)) return Result([]);
-        if (id.Length == 0) return Result([
-            Folder("search", "Search results", "Use Jellyfin's search (magnifying glass) to find artists, albums and songs online. What you find appears here."),
-            Folder("starred", "Starred", "Albums you mark as a favourite here, and albums and songs you star in a Subsonic app."),
-            Folder("recent", "Recently played")]);
+        if (id.Length == 0) return Result(RootItems(MusicCatalog.Fallback));
+        if (id is "popular/artists" or "popular/albums" or "popular/songs")
+        {
+            if (!MusicCatalog.Fallback) return Result([Folder(id + "/status", "Music discovery is off", "Enable the Deezer metadata source in StreamFin settings to browse charts. Jellyfin's search remains available.")]);
+            var popular = await catalog.PopularAsync(ct);
+            IEnumerable<ChannelItemInfo> items = id switch
+            {
+                "popular/artists" => popular.Artists.Select(Artist),
+                "popular/albums" => popular.Releases.Select(release => Album(release, "popular")),
+                _ => (MusicCatalog.PreferExplicit ? MusicCatalog.WithoutCleanCopies(popular.Tracks) : popular.Tracks).Select((track, index) =>
+                {
+                    var item = Track(track, "popular");
+                    item.IndexNumber = index + 1;
+                    item.ParentIndexNumber = null;
+                    return item;
+                })
+            };
+            var result = Result(items);
+            return result.TotalRecordCount > 0 ? result : Result([Folder(id + "/status", "No chart entries are available right now. Try again later.")]);
+        }
         if (id == "search")
         {
             var parent = library.GetNewItemId(MusicSearch.FolderKey, typeof(Folder));
@@ -177,7 +206,7 @@ public sealed class MusicChannel(MusicCatalog catalog, MusicAudio sources, Music
         return Result([]);
     }
 
-    private static bool IsScope(string scope) => scope == "search" || MusicCatalog.IsId(scope);
+    private static bool IsScope(string scope) => scope is "search" or "popular" || MusicCatalog.IsId(scope);
 
     // Search results are library items made by MusicSearch; describe them again so Jellyfin keeps them.
     private static ChannelItemInfo? Restore(BaseItem item) => item switch

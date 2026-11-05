@@ -104,6 +104,13 @@ public sealed class MusicCatalog(SafeHttp http, MusicMetadataStore? disk = null,
         () => DeezerAsync(Uri.EscapeDataString(text), ("tracks", "search?limit=25&q="), ("albums", "search/album?limit=25&q="), ("artists", "search/artist?limit=10&q=")),
         Deezer.ParseSearch, null, null, ct);
 
+    // One metadata-only chart request feeds all three discovery folders and shares the existing
+    // source budget, breaker, request coalescing and cache. Never query a disabled source, even for cached charts.
+    public Task<MusicResults> PopularAsync(CancellationToken ct) => !Fallback
+        ? Task.FromResult(new MusicResults([], [], []))
+        : CachedAsync(deezer, "dz/chart/0", TimeSpan.FromMinutes(30), () => QueryAsync(deezer, new Uri(Deezer.Api, "chart/0?limit=50")),
+            Deezer.ParseChart, null, null, ct);
+
     public Task<MusicRelease> ReleaseAsync(string id, CancellationToken ct) => Deezer.IsId(ValidateId(id))
         ? CachedAsync(deezer, "dz/release/" + id, Lifetime, () => DeezerAsync("", ("album", $"album/{Deezer.Number(id)}"), ("tracks", $"album/{Deezer.Number(id)}/tracks?limit=500")),
             Deezer.ParseRelease, "release", id, ct)
