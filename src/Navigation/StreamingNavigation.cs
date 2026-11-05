@@ -16,6 +16,9 @@ namespace StreamFin;
 public sealed class HubChannel : IChannel, IHasCacheKey
 {
     public const string ChannelName = "StreamFin";
+    // Keep Name stable: Jellyfin derives the channel's identity from it.
+    public static string DisplayName => NormalizeDisplayName(Plugin.Instance?.Configuration.StreamingLibraryName);
+    public static string NormalizeDisplayName(string? value) => string.IsNullOrWhiteSpace(value) ? ChannelName : value.Trim();
     public string Name => ChannelName;
     public string Description => "Browse online anime, movies, TV shows and music.";
     public string DataVersion => "streamfin-hub-1-" + SourceRegistry.AnyEnabled + "-" + FilmChannel.IsAvailable + "-" + MusicChannel.IsAvailable
@@ -73,6 +76,7 @@ public sealed class StreamingNavigation(ILibraryManager library, IChannelManager
     // item's Id and ChannelId, so all subsequent browsing and playback use old routes.
     public async Task<BaseItemDto?> ResolveAsync(BaseItemDto dto, User? user, CancellationToken ct)
     {
+        if (dto.Id == HubId) dto.Name = HubChannel.DisplayName;
         if (!IsPlaceholder(dto.Id)) return dto;
         if (user is null || !Plugin.Allows(user.Id) || !HubChannel.Enabled) return null;
         var key = library.GetItemById(dto.Id)?.ExternalId;

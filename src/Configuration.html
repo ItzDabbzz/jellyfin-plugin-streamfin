@@ -41,6 +41,7 @@
         <h3 id="streamfinNavigationTitle">Navigation</h3>
       <label class="checkboxContainer"><input is="emby-checkbox" type="checkbox" id="streamfinEnabled"><span>Turn on StreamFin</span></label>
       <div class="selectContainer"><label class="selectLabel" for="streamingNavigationMode">Show in Jellyfin</label><select is="emby-select" id="streamingNavigationMode" aria-describedby="streamfinNavigationHelp"><option value="Channels">Separate channels</option><option value="Hub">Streaming hub</option><option value="Both">Hub and separate channels</option></select><div id="streamfinNavigationHelp" class="fieldDescription">The Streaming hub groups Anime, Movies, TV Shows and Music in one place. Switching navigation keeps watch progress and resume positions. Hub navigation and library links work independently.</div></div>
+      <div class="inputContainer"><label class="inputLabel" for="streamingLibraryName">Streaming library name</label><input is="emby-input" type="text" id="streamingLibraryName" placeholder="StreamFin"><div class="fieldDescription">Name shown for the streaming hub in Jellyfin. Leave blank to use StreamFin.</div></div>
         <h4>Stream online inside your libraries</h4><p>Add a <strong>Stream online</strong> entry to selected libraries. Local content stays unchanged; online titles appear inside that entry.</p><div id="streamfinLibraryLinks"></div><p id="streamfinLibraryLinksStatus" role="status"></p>
       </section>
 <section class="streamfinSection" id="streamfinSources" aria-labelledby="streamfinSourcesTitle"><h3 id="streamfinSourcesTitle">Sources</h3>      <h4>Anime</h4>
@@ -208,6 +209,7 @@
             const [config, users] = await Promise.all([ApiClient.getPluginConfiguration(pluginId), ApiClient.getUsers()]);
             page.querySelector('#streamfinEnabled').checked = config.Enabled;
             page.querySelector('#streamingNavigationMode').value = ['Channels', 'Hub', 'Both'].includes(config.StreamingNavigationMode) ? config.StreamingNavigationMode : 'Channels';
+            page.querySelector('#streamingLibraryName').value = config.StreamingLibraryName ?? 'StreamFin';
             page.querySelector('#zokoEnabled').checked = config.ZokoEnabled !== false;
             page.querySelector('#animeGgEnabled').checked = config.AnimeGgEnabled;
             page.querySelector('#animeProviderFallback').checked = config.AnimeProviderFallback !== false;
@@ -268,6 +270,7 @@
             const config = await ApiClient.getPluginConfiguration(pluginId);
             config.Enabled = page.querySelector('#streamfinEnabled').checked;
             config.StreamingNavigationMode = page.querySelector('#streamingNavigationMode').value;
+            config.StreamingLibraryName = page.querySelector('#streamingLibraryName').value.trim() || 'StreamFin';
             if (libraryIds !== null) {
               const unavailable = (config.StreamingLibraryLinks || []).filter(link => !libraryIds.has(normalizeId(link.LibraryId)));
               config.StreamingLibraryLinks = unavailable.concat(Array.from(page.querySelectorAll('#streamfinLibraryLinks select')).filter(select => select.value).map(select => ({ LibraryId: select.dataset.libraryId, Category: select.value })));

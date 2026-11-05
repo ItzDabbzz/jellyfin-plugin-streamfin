@@ -9,6 +9,7 @@ public sealed class Configuration : BasePluginConfiguration
 {
     public bool Enabled { get; set; }
     public string StreamingNavigationMode { get; set; } = "Channels";
+    public string StreamingLibraryName { get; set; } = "StreamFin";
     public StreamingLibraryLink[] StreamingLibraryLinks { get; set; } = [];
     public string[] AllowedUserIds { get; set; } = [];
     // HiAnime. The name and the "zoko" source id are kept so saved settings and episode IDs survive.
