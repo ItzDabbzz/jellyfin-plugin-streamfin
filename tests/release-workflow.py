@@ -37,7 +37,7 @@ gh() {
       echo manifest.json;;
     'release list') [ "$SCENARIO" != previous ] || echo v0.11.0.0;;
     'release download') mkdir -p "$RUNNER_TEMP/previous"; printf '[]' > "$RUNNER_TEMP/previous/manifest.json";;
-    'release create'|'release upload') return 0;;
+    'release create'|'release upload'|'release edit') return 0;;
     *) return 98;;
   esac
 }
@@ -87,6 +87,9 @@ class ReleaseWorkflow(unittest.TestCase):
         calls = (self.root / 'calls.txt').read_text()
         self.assertNotIn('release download', calls)
         self.assertIn('release create', calls)
+        self.assertIn('--draft --verify-tag', calls)
+        self.assertLess(calls.index('release upload'), calls.index('release edit'))
+        self.assertIn('release edit v0.12.0.1 --draft=false', calls)
         self.assertIn('StreamFin-0.12.0.1.zip.sigstore.json artifacts/manifest.json --clobber', calls)
 
     def test_previous_manifest_is_downloaded(self):

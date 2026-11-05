@@ -64,5 +64,6 @@ jobs:
           python3 scripts/manifest.py --manifest artifacts/manifest.json --zip "artifacts/StreamFin-$VERSION.zip" \
             --url "https://github.com/$GITHUB_REPOSITORY/releases/download/$TAG/StreamFin-$VERSION.zip" \
             --changelog "$(cat "$RUNNER_TEMP/notes.txt")"
-          gh release view "$TAG" >/dev/null 2>&1 || gh release create "$TAG" --verify-tag --title "StreamFin $VERSION" --notes-file "$RUNNER_TEMP/notes.txt"
+          gh release view "$TAG" >/dev/null 2>&1 || gh release create "$TAG" --draft --verify-tag --title "StreamFin $VERSION" --notes-file "$RUNNER_TEMP/notes.txt"
           gh release upload "$TAG" "artifacts/StreamFin-$VERSION.zip" "artifacts/StreamFin-$VERSION.zip.sigstore.json" artifacts/manifest.json --clobber
+          gh release edit "$TAG" --draft=false
