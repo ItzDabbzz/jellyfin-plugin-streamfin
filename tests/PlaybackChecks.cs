@@ -17,6 +17,11 @@ internal static class PlaybackChecks
             "missing subtitles fall back to the same episode on another enabled provider");
 
         calls.Clear();
+        await registry.ResolveWithFallbackAsync(anime, 2, "zoko:10-2", default, config);
+        Check(calls.SequenceEqual(["zoko:resolve", "animegg:resolve"]),
+            "repeat playback reuses provider matches and episodes but resolves fresh playback URLs");
+
+        calls.Clear();
         result = await registry.ResolveWithFallbackAsync(anime, 2, "episode-2", default, config);
         Check(result.SourceKey == "episode-2" && calls.SequenceEqual(["animegg:resolve"]), "working selected provider is used without searching others");
 

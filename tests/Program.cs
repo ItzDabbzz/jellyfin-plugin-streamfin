@@ -4,6 +4,8 @@ using System.Text;
 using System.Text.RegularExpressions;
 using StreamFin;
 
+await BrowseCacheChecks.RunAsync();
+if (args.Contains("--browse-cache-only")) return;
 await MusicDiscoveryChecks.RunAsync();
 if (args.Contains("--music-discovery-only")) return;
 

@@ -3,8 +3,16 @@ namespace StreamFin;
 public sealed record SourceMatches(string Id, string Name, IReadOnlyList<SourceTitle> Titles, string? Error = null);
 public sealed record AnimePlayback(string SourceKey, IReadOnlyList<ResolvedVideo> Videos);
 
-public sealed class SourceRegistry(IEnumerable<IAnimeSource> providers)
+public sealed class SourceRegistry(IEnumerable<IAnimeSource> providers) : IDisposable
 {
+    private readonly BrowseCache<SourceMatches> matches = new(value => value.Error is null && value.Titles.Count > 0);
+    private readonly BrowseCache<IReadOnlyList<SourceEpisode>> episodes = new(value => value.Count > 0);
+    private static string MetadataKey(Anime anime) => (Plugin.Instance?.Configuration.CacheRevision ?? 0)
+        + "/" + System.Text.Json.JsonSerializer.Serialize(anime);
+    private Task<SourceMatches> MatchCachedAsync(IAnimeSource source, Anime anime, CancellationToken ct) =>
+        matches.GetAsync(source.Id + "/" + MetadataKey(anime), TimeSpan.FromMinutes(30), token => MatchAsync(source, anime, token), ct);
+    private Task<IReadOnlyList<SourceEpisode>> EpisodesCachedAsync(IAnimeSource source, string id, Anime anime, CancellationToken ct) =>
+        episodes.GetAsync(source.Id + "/" + id + "/" + MetadataKey(anime), TimeSpan.FromHours(6), token => source.EpisodesAsync(id, anime, token), ct);
     public static readonly string[] Order = ["zoko", "animegg", "animeheaven"];
     private readonly IAnimeSource[] ordered = providers.OrderBy(p => Array.IndexOf(Order, p.Id) is var i and >= 0 ? i : Order.Length).ToArray();
     private readonly IReadOnlyDictionary<string, IAnimeSource> sources = providers.ToDictionary(p => p.Id, StringComparer.Ordinal);
@@ -35,7 +43,7 @@ public sealed class SourceRegistry(IEnumerable<IAnimeSource> providers)
         return source;
     }
     public Task<IReadOnlyList<SourceEpisode>> EpisodesAsync(string key, Anime anime, CancellationToken ct)
-        => Get(key, out var id).EpisodesAsync(id, anime, ct);
+        => EpisodesCachedAsync(Get(key, out var id), id, anime, ct);
     public Task<IReadOnlyList<ResolvedVideo>> ResolveAsync(string key, CancellationToken ct)
         => Get(key, out var id).ResolveAsync(id, ct);
     public string Name(string key) => Get(key, out _).Name;
@@ -64,12 +72,12 @@ public sealed class SourceRegistry(IEnumerable<IAnimeSource> providers)
                 var episodeId = preferred.Id;
                 if (source.Id != preferred.Provider)
                 {
-                    var match = await MatchAsync(source, anime, attempt.Token);
+                    var match = await MatchCachedAsync(source, anime, attempt.Token);
                     var names = anime.Aliases.Prepend(anime.Title).Select(AnimeGgSource.Normalize).ToHashSet();
                     var exact = match.Titles.Where(t => names.Contains(AnimeGgSource.Normalize(t.Title))
                         && (!t.Year.HasValue || t.Year == anime.Year)).ToArray();
                     if (exact.Length != 1) continue;
-                    var episodes = await source.EpisodesAsync(exact[0].Id, anime, attempt.Token);
+                    var episodes = await EpisodesCachedAsync(source, exact[0].Id, anime, attempt.Token);
                     var matching = episodes.Where(e => e.Number == number).ToArray();
                     if (matching.Length != 1) continue;
                     episodeId = matching[0].Id;
@@ -90,7 +98,9 @@ public sealed class SourceRegistry(IEnumerable<IAnimeSource> providers)
     }
 
     public async Task<IReadOnlyList<SourceMatches>> SearchAsync(Anime anime, CancellationToken ct)
-        => await Task.WhenAll(ordered.Where(p => IsEnabled(p.Id)).Select(p => MatchAsync(p, anime, ct)));
+        => await Task.WhenAll(ordered.Where(p => IsEnabled(p.Id)).Select(p => MatchCachedAsync(p, anime, ct)));
+
+    public void Dispose() { matches.Dispose(); episodes.Dispose(); }
 
     public static async Task<SourceMatches> MatchAsync(IAnimeSource source, Anime anime, CancellationToken ct)
     {
