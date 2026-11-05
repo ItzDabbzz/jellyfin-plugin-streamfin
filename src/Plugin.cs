@@ -8,11 +8,14 @@ namespace StreamFin;
 public sealed class Configuration : BasePluginConfiguration
 {
     public bool Enabled { get; set; }
+    public string StreamingNavigationMode { get; set; } = "Channels";
+    public StreamingLibraryLink[] StreamingLibraryLinks { get; set; } = [];
     public string[] AllowedUserIds { get; set; } = [];
     // HiAnime. The name and the "zoko" source id are kept so saved settings and episode IDs survive.
     public bool ZokoEnabled { get; set; } = true;
     public bool AnimeGgEnabled { get; set; } = true;
     public bool AnimeHeavenEnabled { get; set; } = true;
+    public bool AnimeProviderFallback { get; set; } = true;
     public bool HideAdultContent { get; set; } = true;
     public bool HideEcchiContent { get; set; } = true;
     public int MetadataCacheMinutes { get; set; } = 60;

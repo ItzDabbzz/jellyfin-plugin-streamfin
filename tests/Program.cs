@@ -4,6 +4,12 @@ using System.Text;
 using System.Text.RegularExpressions;
 using StreamFin;
 
+await PlaybackChecks.RunAsync();
+await PaginationChecks.RunAsync();
+await NavigationModeChecks.RunAsync();
+LibraryLinkChecks.Run();
+if (args.Contains("--playback-only")) return;
+
 var count = 0;
 void Check(bool condition, string name) { if (!condition) throw new Exception("FAIL: " + name); Console.WriteLine("PASS: " + name); count++; }
 void Reject(Action action, string name) { try { action(); } catch (ProviderException) { Check(true, name); return; } throw new Exception("FAIL: " + name); }

@@ -1,29 +1,58 @@
 <!DOCTYPE html>
 <html><head><title>StreamFin</title></head><body>
-<div id="streamfinConfig" data-role="page" class="page type-interior pluginConfigurationPage" data-require="emby-input,emby-button,emby-checkbox,paper-icon-button-light">
+<div id="streamfinConfig" data-role="page" class="page type-interior pluginConfigurationPage" data-require="emby-select,emby-input,emby-button,emby-checkbox,paper-icon-button-light">
   <div data-role="content"><div class="content-primary">
     <style>
-      #streamfinConfig .streamfinOrder { padding-left: 1.5em; }
-      #streamfinConfig .streamfinOrder > li { margin-bottom: 1.5em; }
-      #streamfinConfig .streamfinRow { display: flex; align-items: center; gap: 0.25em; }
-      #streamfinConfig .streamfinRow .checkboxContainer, #streamfinConfig .streamfinName { flex: 1; margin: 0; }
+      #streamfinConfig .content-primary { max-width: 76em; }
+      #streamfinConfig .streamfinIntro { max-width: 62em; line-height: 1.6; opacity: .8; }
+      #streamfinConfig .streamfinNav { display: flex; flex-wrap: wrap; gap: .5em; margin-block: 1.5em 2em; }
+      #streamfinConfig .streamfinNav a { padding: .7em 1em; border: 1px solid rgba(128,128,128,.45); border-radius: .35em; color: inherit; text-decoration: none; }
+      #streamfinConfig .streamfinNav a:hover { background: rgba(128,128,128,.15); }
+      #streamfinConfig .streamfinSection { margin-block: 0 2em; padding: 1.5em; border: 1px solid rgba(128,128,128,.35); border-radius: .5em; scroll-margin-block-start: 6em; min-width: 0; }
+      #streamfinConfig .streamfinSection > h3 { margin-block-start: 0; }
+      #streamfinConfig .streamfinSection h4 { font-size: 1.1em; margin-block: 1.75em 1em; }
+      #streamfinConfig .streamfinSection .fieldDescription { line-height: 1.6; max-width: 65em; }
+      #streamfinConfig .streamfinSection .inputContainer { margin-block: 1.5em; }
+      #streamfinConfig .streamfinSection .checkboxContainer { margin-block: 1em; }
+      #streamfinConfig .streamfinOrder { padding-inline-start: 1.5em; }
+      #streamfinConfig .streamfinOrder > li { margin-block: 1em; padding: 1em; background: rgba(128,128,128,.08); border-radius: .35em; }
+      #streamfinConfig .streamfinRow { display: flex; align-items: center; flex-wrap: wrap; gap: .5em; }
+      #streamfinConfig .streamfinRow .checkboxContainer, #streamfinConfig .streamfinName { flex: 1 1 12em; margin: 0; }
+      #streamfinConfig .streamfinRow button { min-width: 2.75em; min-height: 2.75em; }
+      #streamfinConfig .streamfinAdvanced { margin-block: 1.5em; border-block-start: 1px solid rgba(128,128,128,.3); padding-block-start: 1em; }
+      #streamfinConfig summary { cursor: pointer; padding-block: .75em; font-weight: 600; }
+      #streamfinConfig .streamfinUserGrid { display: grid; grid-template-columns: repeat(auto-fit,minmax(min(100%,19em),1fr)); gap: 1em; }
+      #streamfinConfig .streamfinUser { min-width: 0; padding: 1em; background: rgba(128,128,128,.08); border: 1px solid rgba(128,128,128,.25); border-radius: .35em; }
+      #streamfinConfig .streamfinUser .inputContainer { margin-block: 1em 0; }
+      #streamfinConfig .streamfinUserActions { display: flex; flex-wrap: wrap; gap: .75em; margin-block: .75em; }
+      #streamfinConfig .streamfinUser input { box-sizing: border-box; max-width: 100%; }
+      #streamfinConfig code { overflow-wrap: anywhere; }
+      #streamfinConfig .streamfinSaveBar { margin-block: 1.5em 3em; }
+      #streamfinConfig :focus-visible { outline: 2px solid #00a4dc; outline-offset: 3px; }
+      @media (max-width: 38em) { #streamfinConfig .streamfinSection { padding: 1em; } #streamfinConfig .streamfinOrder { padding-inline-start: 1em; } }
     </style>
     <h2>StreamFin</h2>
+    <p class="streamfinIntro">Choose what appears in Jellyfin, connect your sources, and give each person access. Changes take effect when you save.</p>
+    <nav class="streamfinNav" aria-label="StreamFin settings sections">
+      <a href="#streamfinNavigation">Navigation</a><a href="#streamfinSources">Sources</a><a href="#streamfinPlayback">Playback &amp; cache</a><a href="#streamfinAccess">User access</a><a href="#streamfinMaintenance">Maintenance</a>
+    </nav>
     <form id="streamfinForm">
+      <section class="streamfinSection" id="streamfinNavigation" aria-labelledby="streamfinNavigationTitle">
+        <h3 id="streamfinNavigationTitle">Navigation</h3>
       <label class="checkboxContainer"><input is="emby-checkbox" type="checkbox" id="streamfinEnabled"><span>Turn on StreamFin</span></label>
-      <h3>Who can watch</h3>
-      <p>Only ticked users see the channels. Nobody is ticked by default.</p>
-      <div id="streamfinUsers"></div>
-      <h3>Anime sources</h3>
+      <div class="selectContainer"><label class="selectLabel" for="streamingNavigationMode">Show in Jellyfin</label><select is="emby-select" id="streamingNavigationMode" aria-describedby="streamfinNavigationHelp"><option value="Channels">Separate channels</option><option value="Hub">Streaming hub</option><option value="Both">Hub and separate channels</option></select><div id="streamfinNavigationHelp" class="fieldDescription">The Streaming hub groups Anime, Movies, TV Shows and Music in one place. Switching navigation keeps watch progress and resume positions. Hub navigation and library links work independently.</div></div>
+        <h4>Stream online inside your libraries</h4><p>Add a <strong>Stream online</strong> entry to selected libraries. Local content stays unchanged; online titles appear inside that entry.</p><div id="streamfinLibraryLinks"></div><p id="streamfinLibraryLinksStatus" role="status"></p>
+      </section>
+<section class="streamfinSection" id="streamfinSources" aria-labelledby="streamfinSourcesTitle"><h3 id="streamfinSourcesTitle">Sources</h3>      <h4>Anime</h4>
       <label class="checkboxContainer"><input is="emby-checkbox" type="checkbox" id="zokoEnabled"><span>HiAnime</span></label>
       <label class="checkboxContainer"><input is="emby-checkbox" type="checkbox" id="animeGgEnabled"><span>AnimeGG</span></label>
       <label class="checkboxContainer"><input is="emby-checkbox" type="checkbox" id="animeHeavenEnabled"><span>AnimeHeaven</span></label>
-      <p>Open a title, then pick a source. If one fails, go back and pick another.</p>
-      <h3>Movies &amp; TV</h3>
+      <label class="checkboxContainer"><input is="emby-checkbox" type="checkbox" id="animeProviderFallback"><span>Try another anime provider when playback fails</span></label><div class="fieldDescription checkboxFieldDescription">Falls back to the same episode on another enabled provider. It never advances to a different episode.</div>
+      <h4>Movies &amp; TV</h4>
       <label class="checkboxContainer"><input is="emby-checkbox" type="checkbox" id="filmEnabled"><span>Show the Movies &amp; TV channel</span></label>
       <div class="inputContainer"><label class="inputLabel" for="tmdbKey">TMDB API key</label><input is="emby-input" type="password" id="tmdbKey" autocomplete="off" spellcheck="false">
         <div class="fieldDescription">Make a free account on themoviedb.org, then go to Settings &gt; API. The short API key and the long read access token both work. The channel stays hidden until a key is set.</div></div>
-      <h3>Music</h3>
+      <h4>Music</h4>
       <label class="checkboxContainer"><input is="emby-checkbox" type="checkbox" id="musicEnabled"><span>Show the Music channel</span></label>
       <label class="checkboxContainer"><input is="emby-checkbox" type="checkbox" id="musicExplicit"><span>Prefer explicit versions</span></label>
       <div class="fieldDescription checkboxFieldDescription">When a song or album also exists as a clean edit, hide the edit and play the original.</div>
@@ -60,9 +89,20 @@
           <p id="healthDeezer" role="status"></p>
         </li>
       </ol>
-      <div class="inputContainer"><label class="inputLabel" for="musicCache">Song cache (MB)</label><input is="emby-input" type="number" id="musicCache" min="0" max="1000000" required>
+      <h4>Content filters</h4>
+      <label class="checkboxContainer"><input is="emby-checkbox" type="checkbox" id="hideAdult"><span>Hide adult titles</span></label>
+      <label class="checkboxContainer"><input is="emby-checkbox" type="checkbox" id="hideEcchi"><span>Hide ecchi titles</span></label>
+      <p>Anime only, based on AniList tags, not an age rating. Movies &amp; TV never shows titles TMDB marks as adult.</p>
+</section>
+      <section class="streamfinSection" id="streamfinPlayback" aria-labelledby="streamfinPlaybackTitle"><h3 id="streamfinPlaybackTitle">Playback &amp; cache</h3>      <div class="inputContainer"><label class="inputLabel" for="musicCache">Song cache (MB)</label><input is="emby-input" type="number" id="musicCache" min="0" max="1000000" required>
         <div class="fieldDescription">Songs you play are kept on this server, so skipping within a song and playing it again are instant. The least recently played make room when it is full. 0 turns it off.</div></div>
-      <div class="inputContainer"><label class="inputLabel" for="ytDlpPath">yt-dlp path (optional)</label><input is="emby-input" type="text" id="ytDlpPath" autocomplete="off" spellcheck="false">
+      <div class="inputContainer"><label class="inputLabel" for="streamfinCache">Catalog cache (minutes)</label><input is="emby-input" type="number" id="streamfinCache" min="1" max="1440" required></div>
+<h4>Save favourites to your library</h4>      <div class="inputContainer"><label class="inputLabel" for="musicFolder">Music library folder</label><input is="emby-input" type="text" id="musicFolder" autocomplete="off" spellcheck="false" placeholder="/media/music/StreamFin">
+        <div class="fieldDescription">Albums you mark as a favourite (the heart on an album in the Music channel, or a star in a Subsonic app) are saved here as tagged FLAC files, one folder per artist and album, so they play offline and in any music app. Use a folder that belongs to a Jellyfin music library and that Jellyfin can write to. Existing files are never replaced. Albums are saved slowly, one song every 20 seconds, to stay within the catalog's limits. Leave empty to save nothing.</div></div>
+      <button is="emby-button" type="button" id="musicSaveStarred" class="raised block" disabled><span>Save every starred album now</span></button>
+      <p id="musicSaveStatus" role="status"></p>
+      <ul id="musicSaves"></ul>
+<details class="streamfinAdvanced"><summary>Advanced music tools &amp; connection settings</summary>      <div class="inputContainer"><label class="inputLabel" for="ytDlpPath">yt-dlp path (optional)</label><input is="emby-input" type="text" id="ytDlpPath" autocomplete="off" spellcheck="false">
         <div class="fieldDescription">Use your own yt-dlp instead of the downloaded one. Leave empty to let StreamFin manage it.</div></div>
       <div class="inputContainer"><label class="inputLabel" for="denoPath">deno path (optional)</label><input is="emby-input" type="text" id="denoPath" autocomplete="off" spellcheck="false">
         <div class="fieldDescription">Use your own deno instead of the downloaded one. Leave empty to let StreamFin manage it.</div></div>
@@ -70,37 +110,70 @@
         <div class="fieldDescription">YouTube refuses many data centre addresses ("Sign in to confirm you're not a bot"). Every YouTube search and download then goes through this proxy instead, for example a VPN container next to Jellyfin: http or socks5, with a host and port. Nothing else StreamFin fetches uses it. Needs the song cache.</div></div>
       <div class="inputContainer"><label class="inputLabel" for="lastFmKey">Last.fm API key (optional)</label><input is="emby-input" type="password" id="lastFmKey" autocomplete="off" spellcheck="false">
         <div class="fieldDescription">Radio mixes an artist with similar ones, as ListenBrainz knows them. For artists ListenBrainz has no data on, a free key from last.fm/api is used as well.</div></div>
-      <div class="inputContainer"><label class="inputLabel" for="musicFolder">Music library folder</label><input is="emby-input" type="text" id="musicFolder" autocomplete="off" spellcheck="false" placeholder="/media/music/StreamFin">
-        <div class="fieldDescription">Albums you mark as a favourite (the heart on an album in the Music channel, or a star in a Subsonic app) are saved here as tagged FLAC files, one folder per artist and album, so they play offline and in any music app. Use a folder that belongs to a Jellyfin music library and that Jellyfin can write to. Existing files are never replaced. Albums are saved slowly, one song every 20 seconds, to stay within the catalog's limits. Leave empty to save nothing.</div></div>
-      <button is="emby-button" type="button" id="musicSaveStarred" class="raised block" disabled><span>Save every starred album now</span></button>
-      <p id="musicSaveStatus" role="status"></p>
-      <ul id="musicSaves"></ul>
+</details>
+      </section>
+      <section class="streamfinSection" id="streamfinAccess" aria-labelledby="streamfinAccessTitle"><h3 id="streamfinAccessTitle">User access</h3>
+<p>Select who can see StreamFin channels and use its Subsonic API. No user has access until selected. An app password alone does not grant access.</p>
       <h3>Subsonic apps</h3>
       <label class="checkboxContainer"><input is="emby-checkbox" type="checkbox" id="subsonicEnabled"><span>Turn on the Subsonic API</span></label>
-      <div class="fieldDescription checkboxFieldDescription">For Symfonium, Feishin, Tempo, play:Sub and other Subsonic apps. In the app, use the server address <code id="subsonicAddress"></code>, the Jellyfin username, and the app password below. The Jellyfin password does not work there. A new password replaces the old one.</div>
+      <div class="fieldDescription checkboxFieldDescription">For Symfonium, Feishin, Tempo, play:Sub and other Subsonic apps. In the app, use the server address <code id="subsonicAddress"></code>, the Jellyfin username, and that user's app password in the cards below. The Jellyfin password does not work there. Create a separate app password for each allowed user. A new password replaces that user's old one.</div>
       <label class="checkboxContainer"><input is="emby-checkbox" type="checkbox" id="subsonicLossless"><span>Always send lossless unless the app limits the bit rate</span></label>
       <div class="fieldDescription checkboxFieldDescription">Some apps, Amperfy among them, ask for MP3 by default. With this on they get the original FLAC instead, which sounds better and seeks faster. A data saving limit in the app, such as 128 or 320 kbps, still gets a smaller converted file.</div>
-      <div id="subsonicPasswords"></div>
-      <h3>Content filters</h3>
-      <label class="checkboxContainer"><input is="emby-checkbox" type="checkbox" id="hideAdult"><span>Hide adult titles</span></label>
-      <label class="checkboxContainer"><input is="emby-checkbox" type="checkbox" id="hideEcchi"><span>Hide ecchi titles</span></label>
-      <p>Anime only, based on AniList tags, not an age rating. Movies &amp; TV never shows titles TMDB marks as adult.</p>
-      <h3>Cache</h3>
-      <div class="inputContainer"><label class="inputLabel" for="streamfinCache">Catalog cache (minutes)</label><input is="emby-input" type="number" id="streamfinCache" min="1" max="1440" required></div>
-      <p id="streamfinStatus" role="status">Loading settings…</p>
-      <button is="emby-button" type="submit" id="streamfinSave" class="raised button-submit block" disabled><span>Save</span></button>
-      <h3>Maintenance</h3>
+
+<h4>People &amp; app passwords</h4><p>Each card belongs to one Jellyfin user. Select access, then create an app password if they use a Subsonic app. Press Save to apply both.</p><div id="streamfinUsers" class="streamfinUserGrid"></div><div id="subsonicPasswords"></div></section>
+      <section class="streamfinSection" id="streamfinMaintenance" aria-labelledby="streamfinMaintenanceTitle"><h3 id="streamfinMaintenanceTitle">Maintenance</h3><p>These actions run immediately and affect every user.</p><details><summary>Catalog &amp; search maintenance</summary>
       <button is="emby-button" type="button" id="streamfinRefresh" class="raised block" disabled><span>Refresh catalogs now</span></button>
       <button is="emby-button" type="button" id="streamfinClearSearch" class="raised block" disabled><span>Clear search results</span></button>
       <p>Clearing removes found titles from every channel's Search results, for every user. Watched status and resume positions are kept.</p>
       <p id="streamfinClearStatus" role="status"></p>
-    </form>
-    <script>
+</details>
+      </section>
+      <div class="streamfinSaveBar"><p id="streamfinStatus" role="status">Loading settings...</p><button is="emby-button" type="submit" id="streamfinSave" class="raised button-submit block" disabled><span>Save settings</span></button></div></form>    <script>
       (function () {
         const pluginId = 'a74fdb2e-938f-483b-b2ef-f527e14ff724';
         const page = document.querySelector('#streamfinConfig');
+        page.querySelector('.streamfinNav').addEventListener('click', function (event) {
+          const link = event.target.closest('a[href^="#"]');
+          if (!link) return;
+          event.preventDefault();
+          const section = page.querySelector(link.getAttribute('href'));
+          if (section) section.scrollIntoView({block: 'start'});
+        });
         let loaded = false;
         let passwords = {};
+        let libraryIds = null;
+        function normalizeId(value) { return String(value || '').replaceAll('-', '').toLowerCase(); }
+        async function renderLibraryLinks(config) {
+          libraryIds = null;
+          const container = page.querySelector('#streamfinLibraryLinks');
+          const status = page.querySelector('#streamfinLibraryLinksStatus');
+          container.replaceChildren(); status.textContent = 'Loading libraries...';
+          try {
+            const libraries = await ApiClient.ajax({type: 'GET', url: ApiClient.getUrl('Library/VirtualFolders'), dataType: 'json'});
+            if (!Array.isArray(libraries)) throw new Error('Invalid library response');
+            libraryIds = new Set();
+            libraries.filter(library => library.ItemId && ['', 'movies', 'tvshows', 'music'].includes(library.CollectionType || '')).forEach(library => {
+              const key = normalizeId(library.ItemId);
+              if (libraryIds.has(key)) return;
+              libraryIds.add(key);
+              const row = document.createElement('div'); row.className = 'selectContainer inputContainer';
+              const label = document.createElement('label'); label.className = 'selectLabel'; label.htmlFor = 'streamfinLibrary-' + key; label.textContent = library.Name;
+              const select = document.createElement('select'); select.id = label.htmlFor; select.setAttribute('is', 'emby-select'); select.dataset.libraryId = library.ItemId;
+              [['', 'Off'], ['anime', 'Anime'], ['movies', 'Movies'], ['tv', 'TV Shows'], ['music', 'Music']].forEach(([value, text]) => {
+                const option = document.createElement('option'); option.value = value; option.textContent = text; select.append(option);
+              });
+              const existing = (config.StreamingLibraryLinks || []).find(link => normalizeId(link.LibraryId) === key);
+              select.value = existing && ['anime', 'movies', 'tv', 'music'].includes(existing.Category) ? existing.Category : '';
+              row.append(label, select); container.append(row);
+            });
+            status.textContent = libraryIds.size ? 'Choose a category for each library. Off leaves that library unchanged. Save settings to apply.' : 'No movie, TV, music or mixed libraries were found. Create a library in Jellyfin first.';
+          } catch (error) {
+            libraryIds = null;
+            container.querySelectorAll('select').forEach(select => { select.disabled = true; });
+            status.textContent = 'Could not load libraries. Existing library links will be kept when you save. Reload this page to change them.';
+          }
+        }
+
         // 32 symbols, so a random byte maps to one without bias. No l, o, 0 or 1 to misread.
         const alphabet = 'abcdefghijkmnpqrstuvwxyz23456789';
         function newPassword() { return Array.from(crypto.getRandomValues(new Uint8Array(24)), b => alphabet[b % 32]).join(''); }
@@ -109,18 +182,18 @@
           container.replaceChildren();
           users.forEach(user => {
             const key = user.Id.replaceAll('-', '').toLowerCase();
-            const row = document.createElement('div'); row.className = 'inputContainer';
-            const label = document.createElement('label'); label.className = 'inputLabel'; label.textContent = user.Name;
-            const input = document.createElement('input'); input.setAttribute('is', 'emby-input'); input.readOnly = true; input.spellcheck = false;
-            input.value = passwords[key] || ''; input.placeholder = 'No app password';
+            const row = document.createElement('div'); row.className = 'inputContainer'; row.dataset.userId = key;
+            const label = document.createElement('label'); label.className = 'inputLabel'; label.textContent = 'App password for ' + user.Name;
+            const input = document.createElement('input'); input.setAttribute('is', 'emby-input'); input.readOnly = true; input.spellcheck = false; input.id = 'appPassword-' + key; input.type = 'text'; input.autocomplete = 'off'; label.htmlFor = input.id;
+            input.value = passwords[key] || ''; input.placeholder = 'No app password'; input.setAttribute('aria-describedby', 'appPasswordHelp-' + key);
             const make = document.createElement('button'); make.type = 'button'; make.setAttribute('is', 'emby-button'); make.className = 'raised';
             make.textContent = 'New password';
             make.addEventListener('click', () => { passwords[key] = newPassword(); input.value = passwords[key]; });
             const remove = document.createElement('button'); remove.type = 'button'; remove.setAttribute('is', 'emby-button'); remove.className = 'raised';
             remove.textContent = 'Remove';
             remove.addEventListener('click', () => { delete passwords[key]; input.value = ''; });
-            const help = document.createElement('div'); help.className = 'fieldDescription'; help.textContent = 'Saved when you press Save. Only works for users ticked above.';
-            row.append(label, input, make, remove, help); container.append(row);
+            const help = document.createElement('div'); help.className = 'fieldDescription'; help.id = 'appPasswordHelp-' + key; help.textContent = 'Use with this Jellyfin username: ' + user.Name + '. Saved when you press Save settings. Requires access on this card.';
+            const actions = document.createElement('div'); actions.className = 'streamfinUserActions'; actions.append(make, remove); row.append(label, input, actions, help); container.append(row);
           });
         }
         page.addEventListener('viewshow', async function () {
@@ -134,8 +207,10 @@
           try {
             const [config, users] = await Promise.all([ApiClient.getPluginConfiguration(pluginId), ApiClient.getUsers()]);
             page.querySelector('#streamfinEnabled').checked = config.Enabled;
+            page.querySelector('#streamingNavigationMode').value = ['Channels', 'Hub', 'Both'].includes(config.StreamingNavigationMode) ? config.StreamingNavigationMode : 'Channels';
             page.querySelector('#zokoEnabled').checked = config.ZokoEnabled !== false;
             page.querySelector('#animeGgEnabled').checked = config.AnimeGgEnabled;
+            page.querySelector('#animeProviderFallback').checked = config.AnimeProviderFallback !== false;
             page.querySelector('#filmEnabled').checked = config.FilmEnabled !== false;
             page.querySelector('#tmdbKey').value = config.TmdbApiKey || '';
             page.querySelector('#musicEnabled').checked = config.MusicEnabled !== false;
@@ -167,10 +242,11 @@
             users.forEach(user => {
               const label = document.createElement('label'); label.className = 'checkboxContainer';
               const input = document.createElement('input', 'emby-checkbox'); input.type = 'checkbox'; input.setAttribute('is', 'emby-checkbox'); input.value = user.Id;
-              input.checked = config.AllowedUserIds.some(id => id.replaceAll('-', '').toLowerCase() === user.Id.replaceAll('-', '').toLowerCase());
+              input.checked = (config.AllowedUserIds || []).some(id => id.replaceAll('-', '').toLowerCase() === user.Id.replaceAll('-', '').toLowerCase());
               const text = document.createElement('span'); text.textContent = user.Name;
-              label.append(input, text); container.append(label);
+              const card = document.createElement('div'); card.className = 'streamfinUser'; text.textContent = user.Name + ' — allow StreamFin access'; label.append(input, text); card.append(label); const key = user.Id.replaceAll('-', '').toLowerCase(); const passwordRow = Array.from(page.querySelector('#subsonicPasswords').children).find(row => row.dataset.userId === key); if (passwordRow) card.append(passwordRow); container.append(card);
             });
+            await renderLibraryLinks(config);
             loaded = true;
             page.querySelector('#streamfinSave').disabled = false;
             page.querySelector('#streamfinRefresh').disabled = false;
@@ -191,8 +267,14 @@
           try {
             const config = await ApiClient.getPluginConfiguration(pluginId);
             config.Enabled = page.querySelector('#streamfinEnabled').checked;
+            config.StreamingNavigationMode = page.querySelector('#streamingNavigationMode').value;
+            if (libraryIds !== null) {
+              const unavailable = (config.StreamingLibraryLinks || []).filter(link => !libraryIds.has(normalizeId(link.LibraryId)));
+              config.StreamingLibraryLinks = unavailable.concat(Array.from(page.querySelectorAll('#streamfinLibraryLinks select')).filter(select => select.value).map(select => ({ LibraryId: select.dataset.libraryId, Category: select.value })));
+            }
             config.ZokoEnabled = page.querySelector('#zokoEnabled').checked;
             config.AnimeGgEnabled = page.querySelector('#animeGgEnabled').checked;
+            config.AnimeProviderFallback = page.querySelector('#animeProviderFallback').checked;
             config.FilmEnabled = page.querySelector('#filmEnabled').checked;
             config.TmdbApiKey = page.querySelector('#tmdbKey').value.trim();
             config.MusicEnabled = page.querySelector('#musicEnabled').checked;
@@ -246,6 +328,9 @@
         }
         function arrows(list) {
           Array.from(list.children).forEach((item, index) => {
+            const name = item.querySelector('.checkboxContainer span, .streamfinName').textContent;
+            item.querySelector('.streamfinUp').setAttribute('aria-label', 'Move ' + name + ' up');
+            item.querySelector('.streamfinDown').setAttribute('aria-label', 'Move ' + name + ' down');
             item.querySelector('.streamfinUp').disabled = index === 0;
             item.querySelector('.streamfinDown').disabled = index === list.children.length - 1;
           });

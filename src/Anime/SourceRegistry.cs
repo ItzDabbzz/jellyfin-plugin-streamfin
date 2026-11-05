@@ -1,6 +1,7 @@
 namespace StreamFin;
 
 public sealed record SourceMatches(string Id, string Name, IReadOnlyList<SourceTitle> Titles, string? Error = null);
+public sealed record AnimePlayback(string SourceKey, IReadOnlyList<ResolvedVideo> Videos);
 
 public sealed class SourceRegistry(IEnumerable<IAnimeSource> providers)
 {
@@ -38,6 +39,55 @@ public sealed class SourceRegistry(IEnumerable<IAnimeSource> providers)
     public Task<IReadOnlyList<ResolvedVideo>> ResolveAsync(string key, CancellationToken ct)
         => Get(key, out var id).ResolveAsync(id, ct);
     public string Name(string key) => Get(key, out _).Name;
+
+    // Keep the selected episode's identity and watch state even when its provider cannot play it.
+    // An alternate must have one exact title/year match and the same episode number.
+    public async Task<AnimePlayback> ResolveWithFallbackAsync(Anime anime, decimal? number, string preferredKey,
+        CancellationToken ct, Configuration? configuration = null)
+    {
+        var config = configuration ?? Plugin.Instance?.Configuration;
+        var preferred = Split(preferredKey);
+        if (!IsEnabled(preferred.Provider, config) || !sources.ContainsKey(preferred.Provider))
+            throw new ProviderException("This provider is disabled or unavailable. Choose another provider under the title.");
+        ct.ThrowIfCancellationRequested();
+        using var budget = CancellationTokenSource.CreateLinkedTokenSource(ct);
+        budget.CancelAfter(TimeSpan.FromSeconds(60));
+        var failures = new List<string>();
+        foreach (var source in ordered.Where(p => IsEnabled(p.Id, config))
+                     .OrderBy(p => p.Id == preferred.Provider ? 0 : 1))
+        {
+            if (source.Id != preferred.Provider && (number is null || config?.AnimeProviderFallback == false)) continue;
+            using var attempt = CancellationTokenSource.CreateLinkedTokenSource(budget.Token);
+            attempt.CancelAfter(TimeSpan.FromSeconds(20));
+            try
+            {
+                var episodeId = preferred.Id;
+                if (source.Id != preferred.Provider)
+                {
+                    var match = await MatchAsync(source, anime, attempt.Token);
+                    var names = anime.Aliases.Prepend(anime.Title).Select(AnimeGgSource.Normalize).ToHashSet();
+                    var exact = match.Titles.Where(t => names.Contains(AnimeGgSource.Normalize(t.Title))
+                        && (!t.Year.HasValue || t.Year == anime.Year)).ToArray();
+                    if (exact.Length != 1) continue;
+                    var episodes = await source.EpisodesAsync(exact[0].Id, anime, attempt.Token);
+                    var matching = episodes.Where(e => e.Number == number).ToArray();
+                    if (matching.Length != 1) continue;
+                    episodeId = matching[0].Id;
+                }
+                var videos = await source.ResolveAsync(episodeId, attempt.Token);
+                if (videos.Count == 0) throw new ProviderException("No playable video was returned.");
+                return new(Key(source.Id, episodeId), videos);
+            }
+            catch (Exception ex) when (!ct.IsCancellationRequested && ex is ProviderException or HttpRequestException
+                or System.Text.RegularExpressions.RegexMatchTimeoutException or UriFormatException or System.Text.Json.JsonException or OperationCanceledException)
+            {
+                failures.Add(source.Name + ": " + (ex is ProviderException ? ex.Message : "temporarily unavailable"));
+                if (budget.IsCancellationRequested) break;
+            }
+        }
+        ct.ThrowIfCancellationRequested();
+        throw new ProviderException("No enabled provider could play this episode. " + string.Join(" ", failures));
+    }
 
     public async Task<IReadOnlyList<SourceMatches>> SearchAsync(Anime anime, CancellationToken ct)
         => await Task.WhenAll(ordered.Where(p => IsEnabled(p.Id)).Select(p => MatchAsync(p, anime, ct)));

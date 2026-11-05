@@ -2,7 +2,7 @@ namespace StreamFin;
 
 public sealed record Anime(int Id, string Title, string[] Aliases, int? Year, string Overview, string? Image, int? Duration, bool IsAdult, string[] Genres,
     int? MalId = null, int? AvailableEpisodes = null);
-public sealed record CatalogPage(IReadOnlyList<Anime> Items, bool HasNext);
+public sealed record CatalogPage(IReadOnlyList<Anime> Items, bool HasNext, int TotalCount = 0);
 public sealed record SourceTitle(string Id, string Title, int? Year = null);
 public sealed record SourceEpisode(string Id, decimal Number, string Title);
 public sealed record Subtitle(string Label, string Language, Uri Url);

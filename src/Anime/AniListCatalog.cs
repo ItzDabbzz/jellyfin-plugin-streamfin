@@ -44,14 +44,16 @@ public sealed class AniListCatalog(SafeHttp http, ILogger<AniListCatalog> logger
         if (cache.TryGetValue<CatalogPage>($"{Revision}/{key}", out var found)) return found!;
         var order = category == "search" ? "SEARCH_MATCH" : category == "az" ? "TITLE_ROMAJI" : "POPULARITY_DESC";
         var seasonal = category == "season" ? $",season:{season.Season},seasonYear:{season.Year}" : "";
-        var query = "query($page:Int" + (category == "search" ? ",$search:String" : "") + "){Page(page:$page,perPage:30){pageInfo{hasNextPage}media(type:ANIME" + Filters + ",sort:" + order + seasonal + (category == "search" ? ",search:$search" : "") + "){" + Fields + "}}}";
+        var query = "query($page:Int" + (category == "search" ? ",$search:String" : "") + "){Page(page:$page,perPage:30){pageInfo{hasNextPage total}media(type:ANIME" + Filters + ",sort:" + order + seasonal + (category == "search" ? ",search:$search" : "") + "){" + Fields + "}}}";
         try
         {
             using var document = await QueryAsync(query, new { page, search = search?.Trim() }, ct, category == "search");
             var root = document.RootElement.GetProperty("data").GetProperty("Page");
             var items = root.GetProperty("media").EnumerateArray().Select(Parse).Where(IsAllowed).ToArray();
             foreach (var item in items) Remember(item);
-            var result = new CatalogPage(items, root.GetProperty("pageInfo").GetProperty("hasNextPage").GetBoolean());
+            var pageInfo = root.GetProperty("pageInfo");
+            var result = new CatalogPage(items, pageInfo.GetProperty("hasNextPage").GetBoolean(),
+                pageInfo.TryGetProperty("total", out var total) && total.TryGetInt32(out var count) ? count : page * 30 + (pageInfo.GetProperty("hasNextPage").GetBoolean() ? 1 : items.Length - 30));
             // Searches are typed a letter at a time; keep them longer so retyping costs nothing.
             Store(key, result, category == "search" ? TimeSpan.FromMinutes(30) : Lifetime);
             return result;

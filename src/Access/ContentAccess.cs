@@ -9,8 +9,9 @@ public sealed class ContentAccess(ILibraryManager library, AniListCatalog catalo
     public Guid ChannelId => library.GetNewItemId("Channel Anime", typeof(MediaBrowser.Controller.Channels.Channel));
     public Guid FilmChannelId => library.GetNewItemId("Channel " + FilmChannel.ChannelName, typeof(MediaBrowser.Controller.Channels.Channel));
     public Guid MusicChannelId => library.GetNewItemId("Channel " + MusicChannel.ChannelName, typeof(MediaBrowser.Controller.Channels.Channel));
+    public Guid HubChannelId => library.GetNewItemId("Channel " + HubChannel.ChannelName, typeof(MediaBrowser.Controller.Channels.Channel));
     public bool IsOurs(Guid id) => IsChannel(id) || library.GetItemById(id)?.ChannelId is { } channel && IsChannel(channel);
-    public bool IsChannel(Guid id) => id == ChannelId || id == FilmChannelId || id == MusicChannelId;
+    public bool IsChannel(Guid id) => id == ChannelId || id == FilmChannelId || id == MusicChannelId || id == HubChannelId;
 
     private static int? AnimeId(BaseItem item)
     {
@@ -26,6 +27,7 @@ public sealed class ContentAccess(ILibraryManager library, AniListCatalog catalo
     public async Task<bool> AllowsAsync(Guid id, CancellationToken ct, bool cachedOnly = false)
     {
         var item = library.GetItemById(id);
+        if (id == HubChannelId || item?.ChannelId == HubChannelId) return HubChannel.Enabled;
         if (item?.ChannelId == FilmChannelId) return FilmChannel.IsAvailable;
         if (item?.ChannelId == MusicChannelId) return MusicChannel.IsAvailable;
         if (item?.ChannelId != ChannelId) return true;
@@ -43,4 +45,22 @@ public sealed class ContentAccess(ILibraryManager library, AniListCatalog catalo
 public static class ChannelNavigation
 {
     public static readonly SemaphoreSlim Gate = new(1, 1);
+
+    public static async Task<Guid?> PopulateAsync(Folder root, Func<Folder, Task<IReadOnlyList<BaseItem>>> load,
+        Func<BaseItem, Task<bool>> allowed, bool descendants, bool singleSource, CancellationToken ct)
+    {
+        ct.ThrowIfCancellationRequested();
+        var children = await load(root);
+        if (!descendants) return null;
+        foreach (var folder in children.OfType<Folder>())
+        {
+            ct.ThrowIfCancellationRequested();
+            // Only descend through playable groupings, never through catalog or status folders.
+            if (folder is not (MediaBrowser.Controller.Entities.TV.Season or MediaBrowser.Controller.Entities.Audio.MusicAlbum)
+                || folder.ExternalId.EndsWith("/status", StringComparison.Ordinal) || !await allowed(folder)) continue;
+            var items = await load(folder);
+            if (singleSource && items.Any(i => i is MediaBrowser.Controller.Entities.TV.Episode)) return folder.Id;
+        }
+        return null;
+    }
 }

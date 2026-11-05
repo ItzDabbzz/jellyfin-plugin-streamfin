@@ -36,6 +36,7 @@ const fs = require('node:fs');
     }
     console.log('PASS: saving preserves permissions and content filters');
     const clearPath = '/StreamFin/SearchResults/Clear';
+    await page.getByText('Catalog & search maintenance', {exact: true}).click();
     const [cleared] = await Promise.all([
       page.waitForResponse(response => response.url().endsWith(clearPath) && response.request().method() === 'POST'),
       page.getByRole('button', {name: 'Clear search results', exact: true}).click()

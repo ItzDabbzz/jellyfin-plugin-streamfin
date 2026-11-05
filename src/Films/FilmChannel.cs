@@ -118,7 +118,6 @@ public sealed class FilmChannel(TmdbCatalog catalog, FlixSource flix, StreamRela
         {
             var data = await catalog.BrowseAsync(category, page, ct);
             var items = data.Items.Select((film, index) => { var item = Item(film, category); item.IndexNumber = index + 1; return item; }).ToList();
-            if (data.HasNext && page < 500) items.Add(Folder($"list/{category}/{page + 1}", $"Next page ({page + 1})"));
             return Result(items);
         }
         if (parts is ["tv", var scope, var showText] && int.TryParse(showText, out var showId))

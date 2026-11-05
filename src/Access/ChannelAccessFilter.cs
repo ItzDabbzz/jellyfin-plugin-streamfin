@@ -1,5 +1,6 @@
 using Jellyfin.Data.Enums;
 using MediaBrowser.Controller.Channels;
+using MediaBrowser.Controller.Dto;
 using MediaBrowser.Controller.Library;
 using MediaBrowser.Controller.Net;
 using MediaBrowser.Controller.Entities;
@@ -18,7 +19,7 @@ namespace StreamFin;
 // IChannel.IsEnabledFor hides the channel, but cached descendants can also be requested
 // via Jellyfin's generic item/playback endpoints. Protect those routes and their results.
 public sealed class ChannelAccessFilter(ILibraryManager library, IAuthorizationContext authorization, IChannelManager channels, ArtworkAccess artwork, ContentAccess content,
-    MusicLyrics lyrics, MusicMix mix)
+    MusicLyrics lyrics, MusicMix mix, CatalogBrowser catalogs, StreamingNavigation navigation, LibraryStreamingLinks links)
     : IAsyncActionFilter, IAsyncResultFilter
 {
     private bool IsOurs(Guid id) => id != Guid.Empty && content.IsOurs(id);
@@ -68,6 +69,32 @@ public sealed class ChannelAccessFilter(ILibraryManager library, IAuthorizationC
             var image = ArtworkAccess.IsImage(context.HttpContext);
             foreach (var id in ids.Where(IsOurs))
                 if (!await content.AllowsAsync(id, context.HttpContext.RequestAborted, cachedOnly: image)) { context.Result = new NotFoundResult(); return; }
+            var currentAuth = await authorization.GetAuthorizationInfo(context.HttpContext);
+            if (currentAuth.User is not null) await links.PrepareAsync(context, currentAuth.User, context.HttpContext.RequestAborted);
+            if (context.HttpContext.Request.Method == "GET" && context.ActionDescriptor is ControllerActionDescriptor { ActionName: "GetItems" or "GetChannelItems" })
+            {
+                var parentId = context.ActionArguments.Where(p => p.Key.Equals("parentId", StringComparison.OrdinalIgnoreCase)
+                    || p.Key.Equals("folderId", StringComparison.OrdinalIgnoreCase)).SelectMany(p => Identifiers(p.Value)).FirstOrDefault();
+                if (parentId == Guid.Empty)
+                    parentId = context.HttpContext.Request.Query.Where(p => p.Key.Equals("parentId", StringComparison.OrdinalIgnoreCase)
+                        || p.Key.Equals("folderId", StringComparison.OrdinalIgnoreCase)).SelectMany(p => Identifiers(p.Value.ToString())).FirstOrDefault();
+                if (library.GetItemById(parentId) is Folder parent && IsOurs(parentId) && CatalogBrowser.IsCatalog(parent.ExternalId))
+                {
+                    var auth = await authorization.GetAuthorizationInfo(context.HttpContext);
+                    var start = int.TryParse(context.HttpContext.Request.Query["StartIndex"], out var offset) ? offset : 0;
+                    var limit = int.TryParse(context.HttpContext.Request.Query["Limit"], out var size) ? Math.Clamp(size, 1, 200) : 100;
+                    if (start < 0 || start >= (parent.ExternalId.StartsWith("catalog/", StringComparison.Ordinal) ? 30000 : 10000))
+                    {
+                        context.Result = new BadRequestObjectResult("Invalid catalog page.");
+                        return;
+                    }
+                    if (auth.User is not null && await catalogs.BrowseAsync(parent, auth.User, start, limit, new DtoOptions(true), context.HttpContext.RequestAborted) is { } catalogPage)
+                    {
+                        context.Result = new OkObjectResult(catalogPage);
+                        return;
+                    }
+                }
+            }
             if (context.ActionDescriptor is ControllerActionDescriptor { ControllerName: "Lyrics", ActionName: "GetLyrics" }
                 && context.ActionArguments.TryGetValue("itemId", out var lyricItem) && lyricItem is Guid lyricId && IsOurs(lyricId))
             {
@@ -93,33 +120,51 @@ public sealed class ChannelAccessFilter(ILibraryManager library, IAuthorizationC
                 && (path.StartsWith("/Shows/", StringComparison.OrdinalIgnoreCase) || path.StartsWith("/Items", StringComparison.OrdinalIgnoreCase)))
             {
                 var auth = await authorization.GetAuthorizationInfo(context.HttpContext);
-                foreach (var id in ids)
+                var episodeQuery = context.ActionDescriptor is ControllerActionDescriptor { ControllerName: "TvShows", ActionName: "GetEpisodes" or "GetNextUp" };
+                var recursive = episodeQuery || string.Equals(context.HttpContext.Request.Query["Recursive"], "true", StringComparison.OrdinalIgnoreCase);
+                var targets = context.ActionArguments.TryGetValue("seasonId", out var requestedSeason) && requestedSeason is Guid seasonId && IsOurs(seasonId)
+                    ? [seasonId] : ids;
+                if (context.ActionArguments.TryGetValue("startItemId", out var startItem) && startItem is Guid startId
+                    && library.GetItemById(startId) is Episode resume && resume.ChannelId == content.ChannelId
+                    && context.ActionArguments.ContainsKey("seasonId"))
+                {
+                    context.ActionArguments["seasonId"] = resume.ParentId;
+                    targets = [resume.ParentId];
+                }
+                foreach (var id in targets)
                 {
                     var item = library.GetItemById(id);
-                    if (item is not Folder || (!IsOurChannel(item.ChannelId) && !IsOurChannel(item.Id))) continue;
+                    if (item is not Folder root || (!IsOurChannel(item.ChannelId) && !IsOurChannel(item.Id))) continue;
                     var channelId = IsOurChannel(item.Id) ? item.Id : item.ChannelId;
                     await ChannelNavigation.Gate.WaitAsync(context.HttpContext.RequestAborted);
                     try
                     {
-                        await channels.GetChannelItemsInternal(new InternalItemsQuery(auth.User) { Parent = item, ChannelIds = [channelId] },
-                            new Progress<double>(), context.HttpContext.RequestAborted);
-                        // Search series received distinct grouping keys in 0.2, but Jellyfin
-                        // does not refresh existing channel descendants on every listing.
-                        // Native Shows/Episodes queries use this stored key, unlike ParentId
-                        // listings. Repair metadata only; keep IDs and user data unchanged.
-                        var series = item as Series ?? (item as Season)?.Series;
-                        if (series is not null && !string.IsNullOrEmpty(series.PresentationUniqueKey))
+                        async Task<IReadOnlyList<BaseItem>> Load(Folder folder)
                         {
-                            foreach (var child in library.GetItemList(new InternalItemsQuery { ParentId = item.Id, Recursive = false }))
+                            await channels.GetChannelItemsInternal(new InternalItemsQuery(auth.User) { Parent = folder, ChannelIds = [channelId] },
+                                new Progress<double>(), context.HttpContext.RequestAborted);
+                            // Native Shows queries group by this stored key rather than ParentId.
+                            var series = folder as Series ?? (folder as Season)?.Series;
+                            if (series is not null && !string.IsNullOrEmpty(series.PresentationUniqueKey))
                             {
-                                if (child is Season season && season.SeriesPresentationUniqueKey != series.PresentationUniqueKey)
-                                    season.SeriesPresentationUniqueKey = series.PresentationUniqueKey;
-                                else if (child is Episode episode && episode.SeriesPresentationUniqueKey != series.PresentationUniqueKey)
-                                    episode.SeriesPresentationUniqueKey = series.PresentationUniqueKey;
-                                else continue;
-                                await child.UpdateToRepositoryAsync(ItemUpdateType.MetadataEdit, context.HttpContext.RequestAborted);
+                                foreach (var child in library.GetItemList(new InternalItemsQuery { ParentId = folder.Id, Recursive = false }))
+                                {
+                                    if (child is Season season && season.SeriesPresentationUniqueKey != series.PresentationUniqueKey)
+                                        season.SeriesPresentationUniqueKey = series.PresentationUniqueKey;
+                                    else if (child is Episode episode && episode.SeriesPresentationUniqueKey != series.PresentationUniqueKey)
+                                        episode.SeriesPresentationUniqueKey = series.PresentationUniqueKey;
+                                    else continue;
+                                    await child.UpdateToRepositoryAsync(ItemUpdateType.MetadataEdit, context.HttpContext.RequestAborted);
+                                }
                             }
+                            return library.GetItemList(new InternalItemsQuery { ParentId = folder.Id, Recursive = false });
                         }
+                        var selected = await ChannelNavigation.PopulateAsync(root, Load,
+                            child => content.AllowsAsync(child.Id, context.HttpContext.RequestAborted), recursive,
+                            channelId == content.ChannelId, context.HttpContext.RequestAborted);
+                        // Alternate anime sources are choices, not consecutive seasons in a play queue.
+                        if (selected is { } source && context.ActionDescriptor is ControllerActionDescriptor { ActionName: "GetEpisodes" }
+                            && context.ActionArguments.ContainsKey("seasonId")) context.ActionArguments["seasonId"] = source;
                     }
                     finally { ChannelNavigation.Gate.Release(); }
                 }
@@ -130,6 +175,15 @@ public sealed class ChannelAccessFilter(ILibraryManager library, IAuthorizationC
     public async Task OnResultExecutionAsync(ResultExecutingContext context, ResultExecutionDelegate next)
     {
         var allowed = await Allowed(context);
+        var auth = allowed ? await authorization.GetAuthorizationInfo(context.HttpContext) : null;
+        // Hide only home/channel roots. Canonical channel IDs remain valid for hub links,
+        // search results, existing favourites, and playback.
+        var rootListing = context.ActionDescriptor is ControllerActionDescriptor { ActionName: "GetChannels" or "GetUserViews" };
+        async Task<BaseItemDto?> Navigate(BaseItemDto dto)
+        {
+            if (rootListing && navigation.HideLegacyRoot(dto.Id)) return null;
+            return allowed ? await navigation.ResolveAsync(dto, auth?.User, context.HttpContext.RequestAborted) : dto;
+        }
         var discoveryList = context.HttpContext.Items[SearchHistory.HiddenTag] is true;
         async Task<bool> Visible(Guid id, bool listing = true) => !IsOurs(id) || (allowed
             && (!listing || !discoveryList || !SearchHistory.IsHidden(library.GetItemById(id)))
@@ -146,19 +200,23 @@ public sealed class ChannelAccessFilter(ILibraryManager library, IAuthorizationC
             switch (result.Value)
             {
                 case BaseItemDto item:
-                    if (!await Visible(item.Id, listing: false)) context.Result = new NotFoundResult();
-                    else Countable(item);
+                    var resolved = await Navigate(item);
+                    if (resolved is null || !await Visible(resolved.Id, listing: false)) context.Result = new NotFoundResult();
+                    else { Countable(resolved); result.Value = resolved; }
                     break;
                 case QueryResult<BaseItemDto> query:
+                    if (auth?.User is not null) await links.ApplyAsync(query, auth.User, context.HttpContext, context.HttpContext.RequestAborted);
                     var kept = new List<BaseItemDto>();
-                    foreach (var dto in query.Items) if (await Visible(dto.Id)) { Countable(dto); kept.Add(dto); }
+                    foreach (var dto in query.Items)
+                        if (await Navigate(dto) is { } mapped && await Visible(mapped.Id)) { Countable(mapped); kept.Add(mapped); }
                     var filtered = kept.ToArray();
                     query.TotalRecordCount = Math.Max(filtered.Length, query.TotalRecordCount - (query.Items.Count - filtered.Length));
                     query.Items = filtered;
                     break;
                 case IEnumerable<BaseItemDto> items:
                     var visible = new List<BaseItemDto>();
-                    foreach (var dto in items) if (await Visible(dto.Id)) { Countable(dto); visible.Add(dto); }
+                    foreach (var dto in items)
+                        if (await Navigate(dto) is { } mapped && await Visible(mapped.Id)) { Countable(mapped); visible.Add(mapped); }
                     result.Value = visible.ToArray();
                     break;
                 // Remote-control users see what others are playing; hide StreamFin titles they may not see.

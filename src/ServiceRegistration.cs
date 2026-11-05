@@ -39,11 +39,15 @@ public sealed class ServiceRegistration : IPluginServiceRegistrator
         services.AddSingleton<IChannel, AnimeChannel>();
         services.AddSingleton<IChannel, FilmChannel>();
         services.AddSingleton<IChannel, MusicChannel>();
+        services.AddSingleton<IChannel, HubChannel>();
         services.AddSingleton<SearchHistory>();
         services.AddSingleton<MediaBrowser.Controller.Library.ISearchProvider, OnlineSearch>();
         services.AddSingleton<MediaBrowser.Controller.Library.ISearchProvider, FilmSearch>();
         services.AddSingleton<MediaBrowser.Controller.Library.ISearchProvider, MusicSearch>();
         services.AddScoped<ContentAccess>();
+        services.AddScoped<CatalogBrowser>();
+        services.AddScoped<StreamingNavigation>();
+        services.AddScoped<LibraryStreamingLinks>();
         services.AddScoped<ChannelAccessFilter>();
         services.AddScoped<ArtworkAccess>();
         services.Configure<MvcOptions>(options => options.Filters.AddService<ChannelAccessFilter>());

@@ -7,7 +7,7 @@ namespace StreamFin;
 
 public enum FilmKind { Movie, Tv }
 public sealed record Film(int Id, FilmKind Kind, string Title, int? Year, string Overview, string? Image, int? Runtime, bool IsAdult);
-public sealed record FilmPage(IReadOnlyList<Film> Items, bool HasNext);
+public sealed record FilmPage(IReadOnlyList<Film> Items, bool HasNext, int TotalCount = 0);
 public sealed record FilmSeason(int Number, string Name, int Episodes, string? Image);
 public sealed record FilmEpisode(int Season, int Number, string Name, string Overview, string? Image, int? Runtime, DateTime? Aired);
 
@@ -43,7 +43,9 @@ public sealed class TmdbCatalog(SafeHttp http) : IDisposable
             var items = root.GetProperty("results").EnumerateArray()
                 .Select(node => Parse(node, category is "movies" or "tv" ? fallback : null)).OfType<Film>().Where(f => !f.IsAdult).ToArray();
             foreach (var film in items) Store($"{film.Kind}/{film.Id}", film, Lifetime);
-            return new FilmPage(items, root.TryGetProperty("total_pages", out var total) && total.TryGetInt32(out var pages) && page < pages);
+            var hasNext = root.TryGetProperty("total_pages", out var total) && total.TryGetInt32(out var pages) && page < pages;
+            return new FilmPage(items, hasNext, root.TryGetProperty("total_results", out var resultCount) && resultCount.TryGetInt32(out var count)
+                ? count : (page - 1) * 20 + items.Length + (hasNext ? 1 : 0));
         });
     }
 

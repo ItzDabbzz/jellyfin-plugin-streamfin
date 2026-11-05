@@ -51,6 +51,16 @@ public sealed class AnimeChannel(AniListCatalog catalog, SourceRegistry sources,
         return new() { Items = array, TotalRecordCount = array.Length };
     }
 
+    public static ChannelItemInfo Item(Anime anime, string scope)
+    {
+        var item = Folder($"title/{scope}/{anime.Id}", anime.Title, anime.Overview);
+        item.ImageUrl = anime.Image;
+        item.ProductionYear = anime.Year;
+        item.FolderType = ChannelFolderType.Series;
+        item.ProviderIds = new Dictionary<string, string> { ["Custom"] = $"anifin-series-{anime.Id}" };
+        return item;
+    }
+
     public async Task<ChannelItemResult> GetChannelItems(InternalChannelItemQuery query, CancellationToken ct)
     {
         if (query.UserId != Guid.Empty && !Plugin.Allows(query.UserId)) throw new UnauthorizedAccessException("StreamFin is not enabled for this account.");
@@ -107,17 +117,13 @@ public sealed class AnimeChannel(AniListCatalog catalog, SourceRegistry sources,
             var items = data.Items.Select(anime =>
             {
                 // Categories get distinct folder IDs: Jellyfin otherwise moves one folder between parents.
-                var item = Folder($"title/{category}/{anime.Id}", anime.Title, anime.Overview);
-                item.ImageUrl = anime.Image;
-                item.ProductionYear = anime.Year;
-                item.FolderType = ChannelFolderType.Series;
+                var item = Item(anime, category);
                 // Jellyfin shares episode progress using the parent series' Custom provider ID.
                 // The anifin prefix predates the rename; changing it would orphan saved progress.
                 item.ProviderIds = new Dictionary<string, string> { ["Custom"] = $"anifin-series-{anime.Id}" };
                 item.IndexNumber = Array.IndexOf(data.Items.ToArray(), anime) + 1;
                 return item;
             }).ToList();
-            if (data.HasNext && page < 1000) items.Add(Folder($"catalog/{category}/{page + 1}", $"Next page ({page + 1})"));
             return Result(items);
         }
         if (parts is ["title", var scope, var animeText] && int.TryParse(animeText, out var animeId))
@@ -200,10 +206,15 @@ public sealed class AnimeChannel(AniListCatalog catalog, SourceRegistry sources,
         if (parts is not ["episode", _, var animeText, var episode] || !int.TryParse(animeText, out var animeId)) throw new ProviderException("Invalid StreamFin episode.");
         var anime = await catalog.GetAsync(animeId, ct);
         if (!AniListCatalog.IsAllowed(anime)) throw new ProviderException("This title is hidden by the content filter.");
-        var videos = await sources.ResolveAsync(episode, ct);
-        var provider = SourceRegistry.Split(episode).Provider;
+        var saved = library.GetItemById(library.GetNewItemId(id + "Anime16", typeof(Episode))) as Episode;
+        var label = saved?.Name.Split('·')[0].Trim();
+        decimal? number = decimal.TryParse(label, NumberStyles.Number, CultureInfo.InvariantCulture, out var parsed) ? parsed : saved?.IndexNumber;
+        var playback = await sources.ResolveWithFallbackAsync(anime, number, episode, ct);
+        var selected = playback.SourceKey;
+        var videos = playback.Videos;
+        var provider = SourceRegistry.Split(selected).Provider;
         var user = auth.UserId;
-        return [await relay.MediaSourceAsync(user, videos[0], $"{sources.Name(episode)} · {videos[0].Quality} · English subtitles",
-            token => sources.ResolveAsync(episode, token), () => Plugin.Allows(user) && SourceRegistry.IsEnabled(provider) && AniListCatalog.IsAllowed(anime), ct)];
+        return [await relay.MediaSourceAsync(user, videos[0], $"{sources.Name(selected)} · {videos[0].Quality} · English subtitles",
+            token => sources.ResolveAsync(selected, token), () => Plugin.Allows(user) && SourceRegistry.IsEnabled(provider) && AniListCatalog.IsAllowed(anime), ct)];
     }
 }
