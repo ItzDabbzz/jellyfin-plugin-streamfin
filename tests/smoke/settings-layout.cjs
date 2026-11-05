@@ -58,6 +58,7 @@ const { chromium } = require(process.env.PLAYWRIGHT_MODULE || process.argv[2] ||
     assert.deepEqual(saved.MusicSearchOrder, ['deezer', 'monochrome']);
     assert.equal(saved.AnimeProviderFallback, true);
     assert.equal(saved.StreamingLibraryName, 'StreamFin');
+    assert.equal(saved.MusicPrefetch, true);
     assert.equal(await page.getByLabel('Local movies', { exact: true }).inputValue(), 'movies');
     assert.equal(await page.getByLabel('TV <not markup>', { exact: true }).inputValue(), '');
     assert.deepEqual(saved.StreamingLibraryLinks, [{ LibraryId: '11111111111111111111111111111111', Category: 'movies' }]);
@@ -69,6 +70,7 @@ const { chromium } = require(process.env.PLAYWRIGHT_MODULE || process.argv[2] ||
     const generated = await page.getByLabel('App password for Morgan', { exact: true }).inputValue();
     assert.equal(generated.length, 24);
     await page.locator('#animeProviderFallback').uncheck();
+    await page.getByLabel('Get the next song ready', { exact: true }).uncheck();
     await page.locator('#streamingNavigationMode').selectOption('Both');
     await page.getByLabel('Streaming library name', { exact: true }).fill('  Online media  ');
     await page.getByLabel('TV <not markup>', { exact: true }).selectOption('anime');
@@ -78,6 +80,7 @@ const { chromium } = require(process.env.PLAYWRIGHT_MODULE || process.argv[2] ||
     assert.deepEqual(saved.AllowedUserIds, users.map(user => user.Id));
     assert.equal(saved.SubsonicPasswords.find(value => value.UserId === users[1].Id).Password, generated);
     assert.equal(saved.AnimeProviderFallback, false);
+    assert.equal(saved.MusicPrefetch, false);
     assert.equal(saved.StreamingNavigationMode, 'Both');
     assert.equal(saved.StreamingLibraryName, 'Online media');
     assert.deepEqual(saved.MusicPlayOrder, ['monochrome', 'youtube']);
