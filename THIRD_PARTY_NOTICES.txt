@@ -23,26 +23,26 @@ the license text is at the end of this file. `music-tile.svg` and `music.png` ad
 
 ## HiAnime provider
 
-`src/HiAnimeSource.cs` follows the request flow that ani-cli (https://github.com/pystardust/ani-cli,
+`src/Anime/Sources/HiAnimeSource.cs` follows the request flow that ani-cli (https://github.com/pystardust/ani-cli,
 version 5.1.6, inspected 2026-10-26) uses for its HiAnime player (now served from zokoanime.video): the MyAnimeList-keyed
 player address and the fixed XOR key of its configuration blob. No ani-cli code is included;
 the C# adapter is written independently and adds validation, bounded requests and English-only selection.
 
 ## FlixHQ provider
 
-`src/FlixSource.cs` ports the site, server-list, unpacking and player logic of the author's own
+`src/Films/FlixSource.cs` ports the site, server-list, unpacking and player logic of the author's own
 `flixdl.py` downloader.
 
 ## AnimeGG provider
 
-`src/AnimeGgSource.cs` adapts the search/episode/embed resolution approach from
+`src/Anime/Sources/AnimeGgSource.cs` adapts the search/episode/embed resolution approach from
 https://github.com/Seanime-contributions/Seanime-Providers/tree/main/src/anime/animegg
 (provider version 1.0.1, inspected 2026-10-06). The C# implementation adds request
 validation, cancellation, numeric sorting, strict subtitle selection, and explicit errors.
 
 ## AnimeHeaven provider
 
-`src/AnimeHeavenSource.cs` adapts the search, episode-key cookie, and MP4 resolution
+`src/Anime/Sources/AnimeHeavenSource.cs` adapts the search, episode-key cookie, and MP4 resolution
 approach from https://github.com/Seanime-contributions/Seanime-Providers/tree/main/src/anime/animeheaven
 (provider version 1.1.4, inspected 2026-10-06). The C# adapter adds strict IDs,
 destination validation, bounded requests, cancellation, and subtitle-only matching.
