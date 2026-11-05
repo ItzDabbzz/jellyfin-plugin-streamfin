@@ -19,7 +19,7 @@ namespace StreamFin;
 // IChannel.IsEnabledFor hides the channel, but cached descendants can also be requested
 // via Jellyfin's generic item/playback endpoints. Protect those routes and their results.
 public sealed class ChannelAccessFilter(ILibraryManager library, IAuthorizationContext authorization, IChannelManager channels, ArtworkAccess artwork, ContentAccess content,
-    MusicLyrics lyrics, MusicMix mix, CatalogBrowser catalogs, StreamingNavigation navigation, LibraryStreamingLinks links)
+    MusicLyrics lyrics, MusicMix mix, CatalogBrowser catalogs, StreamingNavigation navigation, LibraryStreamingLinks links, IDtoService dtos)
     : IAsyncActionFilter, IAsyncResultFilter
 {
     private bool IsOurs(Guid id) => id != Guid.Empty && content.IsOurs(id);
@@ -117,8 +117,7 @@ public sealed class ChannelAccessFilter(ILibraryManager library, IAuthorizationC
             // Native series/season screens use the Shows API instead of Channel/Items.
             // Populate those children lazily before Jellyfin answers the normal request.
             var path = context.HttpContext.Request.Path.Value ?? "";
-            if (context.HttpContext.Request.Method == "GET" && !path.Contains("/Images/", StringComparison.OrdinalIgnoreCase)
-                && (path.StartsWith("/Shows/", StringComparison.OrdinalIgnoreCase) || path.StartsWith("/Items", StringComparison.OrdinalIgnoreCase)))
+            if (context.HttpContext.Request.Method == "GET" && ChannelNavigation.IsNavigationRequest(path))
             {
                 var auth = await authorization.GetAuthorizationInfo(context.HttpContext);
                 var episodeQuery = context.ActionDescriptor is ControllerActionDescriptor { ControllerName: "TvShows", ActionName: "GetEpisodes" or "GetNextUp" };
@@ -166,6 +165,27 @@ public sealed class ChannelAccessFilter(ILibraryManager library, IAuthorizationC
                         // Alternate anime sources are choices, not consecutive seasons in a play queue.
                         if (selected is { } source && context.ActionDescriptor is ControllerActionDescriptor { ActionName: "GetEpisodes" }
                             && context.ActionArguments.ContainsKey("seasonId")) context.ActionArguments["seasonId"] = source;
+                        if (channelId == content.ChannelId && context.ActionDescriptor is ControllerActionDescriptor { ActionName: "GetEpisodes" }
+                            && (selected ?? (root is Season ? root.Id : (Guid?)null)) is { } sourceParent)
+                        {
+                            // Jellyfin's Season.GetEpisodes groups by season number and merges
+                            // every provider's "Season 1". Physical membership is authoritative.
+                            IEnumerable<Episode> queue = ChannelNavigation.SourceEpisodes(library.GetItemList(new InternalItemsQuery(auth.User)
+                                { ParentId = sourceParent, Recursive = false }).OfType<Episode>(), sourceParent);
+                            if (context.ActionArguments.TryGetValue("startItemId", out var beginning) && beginning is Guid beginningId && beginningId != Guid.Empty)
+                                queue = queue.SkipWhile(episode => episode.Id != beginningId);
+                            var ordered = queue.ToArray();
+                            var start = context.ActionArguments.TryGetValue("startIndex", out var startValue) && startValue is int offset ? Math.Max(0, offset) : 0;
+                            int? limit = context.ActionArguments.TryGetValue("limit", out var limitValue) && limitValue is int size ? Math.Max(0, size) : null;
+                            var page = ordered.Skip(start);
+                            if (limit is { } requestedLimit) page = page.Take(requestedLimit);
+                            context.Result = new OkObjectResult(new QueryResult<BaseItemDto>
+                            {
+                                Items = dtos.GetBaseItemDtos(page.ToArray(), new DtoOptions(true), auth.User, null, false),
+                                TotalRecordCount = ordered.Length, StartIndex = start
+                            });
+                            return;
+                        }
                     }
                     finally { ChannelNavigation.Gate.Release(); }
                 }

@@ -48,10 +48,25 @@ internal static class PlaybackChecks
 
     private static async Task NavigationAsync()
     {
+        Check(ChannelNavigation.IsNavigationRequest("/Users/user/Items/series")
+            && ChannelNavigation.IsNavigationRequest("/Shows/series/Episodes")
+            && !ChannelNavigation.IsNavigationRequest("/Users/user/Items/series/Images/Primary"),
+            "legacy item-detail requests hydrate channel children before main-card Play");
         var series = new MediaBrowser.Controller.Entities.TV.Series { Id = Guid.NewGuid(), ExternalId = "title/popular/1" };
         var first = new MediaBrowser.Controller.Entities.TV.Season { Id = Guid.NewGuid(), ExternalId = "source/popular/1/zoko:10" };
         var second = new MediaBrowser.Controller.Entities.TV.Season { Id = Guid.NewGuid(), ExternalId = "source/popular/1/show" };
         var episode = new MediaBrowser.Controller.Entities.TV.Episode { Id = Guid.NewGuid(), ExternalId = "episode/popular/1/episode-2" };
+        var alternate = new MediaBrowser.Controller.Entities.TV.Episode { Id = Guid.NewGuid(), ParentId = first.Id, IndexNumber = 1, ParentIndexNumber = 1 };
+        episode.ParentId = second.Id;
+        episode.IndexNumber = 1;
+        episode.ParentIndexNumber = 1;
+        Check(ChannelNavigation.SourceEpisodes([alternate, episode], second.Id).Select(e => e.Id).SequenceEqual([episode.Id]),
+            "provider playback uses physical source membership even when both are season one");
+        var longSeries = Enumerable.Range(1, 1200).Reverse().Select(number => new MediaBrowser.Controller.Entities.TV.Episode
+            { Id = Guid.NewGuid(), ParentId = second.Id, IndexNumber = number }).Append(alternate);
+        var sourceQueue = ChannelNavigation.SourceEpisodes(longSeries, second.Id);
+        Check(sourceQueue.Count == 1200 && sourceQueue.Select(e => e.IndexNumber).SequenceEqual(Enumerable.Range(1, 1200).Select(number => (int?)number)),
+            "long source queues retain every episode in episode order without provider duplicates");
         var loaded = new List<Guid>();
         Task<IReadOnlyList<MediaBrowser.Controller.Entities.BaseItem>> Load(MediaBrowser.Controller.Entities.Folder folder)
         {

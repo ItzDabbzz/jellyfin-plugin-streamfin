@@ -45,6 +45,12 @@ public sealed class ContentAccess(ILibraryManager library, AniListCatalog catalo
 public static class ChannelNavigation
 {
     public static readonly SemaphoreSlim Gate = new(1, 1);
+    public static bool IsNavigationRequest(string path) => !path.Contains("/Images/", StringComparison.OrdinalIgnoreCase)
+        && (path.StartsWith("/Shows/", StringComparison.OrdinalIgnoreCase) || path.StartsWith("/Items", StringComparison.OrdinalIgnoreCase)
+            || (path.StartsWith("/Users/", StringComparison.OrdinalIgnoreCase) && path.Contains("/Items", StringComparison.OrdinalIgnoreCase)));
+    public static IReadOnlyList<MediaBrowser.Controller.Entities.TV.Episode> SourceEpisodes(
+        IEnumerable<MediaBrowser.Controller.Entities.TV.Episode> episodes, Guid sourceId) => episodes
+        .Where(episode => episode.ParentId == sourceId).OrderBy(episode => episode.IndexNumber).ThenBy(episode => episode.SortName).ToArray();
 
     public static async Task<Guid?> PopulateAsync(Folder root, Func<Folder, Task<IReadOnlyList<BaseItem>>> load,
         Func<BaseItem, Task<bool>> allowed, bool descendants, bool singleSource, CancellationToken ct)
