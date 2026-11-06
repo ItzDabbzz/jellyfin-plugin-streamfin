@@ -11,6 +11,8 @@ namespace StreamFin;
 public sealed class AniListCatalog(SafeHttp http, ILogger<AniListCatalog> logger) : IDisposable
 {
     private readonly MemoryCache cache = new(new MemoryCacheOptions { SizeLimit = 4000 });
+    private readonly BrowseCache<CatalogPage> browsing = new(page => page.Items.Count > 0);
+    private readonly BrowseCache<Anime> titles = new(_ => true);
     private readonly ConcurrentDictionary<string, Lazy<Task<string>>> inflight = new();
     private readonly RateWindow budget = new(25, TimeSpan.FromMinutes(1));
     // Typing a search fires a query per pause. Searches get part of the budget and never wait,
@@ -33,7 +35,11 @@ public sealed class AniListCatalog(SafeHttp http, ILogger<AniListCatalog> logger
     public static (string Season, int Year) CurrentSeason(DateTime date) =>
         (date.Month switch { <= 3 => "WINTER", <= 6 => "SPRING", <= 9 => "SUMMER", _ => "FALL" }, date.Year);
 
-    public async Task<CatalogPage> BrowseAsync(string category, int page, CancellationToken ct, string? search = null)
+    public Task<CatalogPage> BrowseAsync(string category, int page, CancellationToken ct, string? search = null) =>
+        browsing.GetAsync($"{Revision}/{PolicyKey}/{CurrentSeason(DateTime.UtcNow)}/{category}/{page}/{search?.Trim().ToLowerInvariant()}",
+            category == "search" ? TimeSpan.FromMinutes(30) : Lifetime, token => BrowseCoreAsync(category, page, token, search), ct);
+
+    private async Task<CatalogPage> BrowseCoreAsync(string category, int page, CancellationToken ct, string? search)
     {
         if (category is not ("popular" or "season" or "az" or "search") || page is < 1 or > 1000)
             throw new ProviderException("Invalid catalog page.");
@@ -61,7 +67,9 @@ public sealed class AniListCatalog(SafeHttp http, ILogger<AniListCatalog> logger
         catch (Exception ex) when (IsUpstreamFailure(ex) && cache.TryGetValue<CatalogPage>("stale/" + key, out var stale)) { return stale!; }
     }
 
-    public async Task<Anime> GetAsync(int id, CancellationToken ct)
+    public Task<Anime> GetAsync(int id, CancellationToken ct) => titles.GetAsync($"{Revision}/{id}", TitleLifetime, token => GetCoreAsync(id, token), ct);
+
+    private async Task<Anime> GetCoreAsync(int id, CancellationToken ct)
     {
         if (id <= 0) throw new ProviderException("Invalid anime identifier.");
         if (cache.TryGetValue<Anime>($"{Revision}/anime/{id}", out var found)) return found!;
@@ -166,7 +174,7 @@ public sealed class AniListCatalog(SafeHttp http, ILogger<AniListCatalog> logger
             Number(node, "duration"), node.GetProperty("isAdult").GetBoolean(), node.GetProperty("genres").EnumerateArray().Select(g => g.GetString()!).ToArray(),
             Number(node, "idMal"), available);
     }
-    public void Dispose() => cache.Dispose();
+    public void Dispose() { browsing.Dispose(); titles.Dispose(); cache.Dispose(); }
 }
 
 // A sliding window of request slots. Reserve hands out the next free slot and reports how
