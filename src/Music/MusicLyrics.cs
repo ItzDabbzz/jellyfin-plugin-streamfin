@@ -14,6 +14,7 @@ public sealed class MusicLyrics(SafeHttp http, MusicCatalog catalog) : IDisposab
     public const string Host = "lrclib.net";
     private const int LineLimit = 2000;
     private readonly MemoryCache cache = new(new MemoryCacheOptions { SizeLimit = 2000 });
+    private readonly BrowseCache<LyricDto?> requests = new(value => value is not null);
     private readonly RateWindow budget = new(10, TimeSpan.FromSeconds(10));
 
     public async Task<LyricDto?> ForItemAsync(Audio audio, CancellationToken ct)
@@ -30,7 +31,8 @@ public sealed class MusicLyrics(SafeHttp http, MusicCatalog catalog) : IDisposab
 
     public async Task<LyricDto?> TrackAsync(MusicTrack track, string album, CancellationToken ct)
     {
-        try { return await GetAsync(track, album, ct); }
+        try { return await requests.GetAsync($"{Plugin.Instance?.Configuration.CacheRevision}/{track.Id}/{album}",
+            TimeSpan.FromHours(1), token => GetAsync(track, album, token), ct); }
         catch (Exception ex) when (ex is ProviderException or HttpRequestException or JsonException or RegexMatchTimeoutException
             or TaskCanceledException && !ct.IsCancellationRequested) { return null; }
     }
@@ -141,5 +143,5 @@ public sealed class MusicLyrics(SafeHttp http, MusicCatalog catalog) : IDisposab
         return plain.Length > 500 ? plain[..500] : plain;
     }
 
-    public void Dispose() => cache.Dispose();
+    public void Dispose() { requests.Dispose(); cache.Dispose(); }
 }

@@ -24,6 +24,7 @@ public sealed class MusicRadio(SafeHttp http, MusicCatalog catalog) : IDisposabl
     private static readonly TimeSpan Patience = TimeSpan.FromSeconds(12);
     private static readonly TimeSpan Days = TimeSpan.FromDays(3);
     private readonly MemoryCache cache = new(new MemoryCacheOptions { SizeLimit = 5000 });
+    private readonly BrowseCache<IReadOnlyList<MusicTrack>> mixes = new(value => value.Count > 0);
     private readonly SemaphoreSlim brainz = new(1, 1);
     private DateTime lastBrainz;
 
@@ -37,7 +38,11 @@ public sealed class MusicRadio(SafeHttp http, MusicCatalog catalog) : IDisposabl
     private static bool IsMbid(string? id) => id is not null && Regex.IsMatch(id, @"\A[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\z", RegexOptions.None, TimeSpan.FromSeconds(1));
 
     // A mix: some of the artist's own top tracks, then the similar artists' in turn. Empty when nothing is known.
-    public async Task<IReadOnlyList<MusicTrack>> RadioAsync(string artistId, int count, CancellationToken ct)
+    public Task<IReadOnlyList<MusicTrack>> RadioAsync(string artistId, int count, CancellationToken ct) =>
+        mixes.GetAsync($"{Plugin.Instance?.Configuration.CacheRevision}/{MusicCatalog.ApiHost}/{MusicCatalog.Fallback}/{MusicCatalog.PreferExplicit}/{DateOnly.FromDateTime(DateTime.UtcNow)}/{artistId}/{count}",
+            TimeSpan.FromHours(1), token => RadioCoreAsync(artistId, count, token), ct);
+
+    private async Task<IReadOnlyList<MusicTrack>> RadioCoreAsync(string artistId, int count, CancellationToken ct)
     {
         var deadline = DateTime.UtcNow + Patience;
         var artist = await catalog.ArtistAsync(artistId, ct);
@@ -256,6 +261,7 @@ public sealed class MusicRadio(SafeHttp http, MusicCatalog catalog) : IDisposabl
     public void Dispose()
     {
         cache.Dispose();
+        mixes.Dispose();
         brainz.Dispose();
     }
 }
