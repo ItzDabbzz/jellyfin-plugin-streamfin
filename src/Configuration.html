@@ -96,7 +96,9 @@
       <p>Anime only, based on AniList tags, not an age rating. Movies &amp; TV never shows titles TMDB marks as adult.</p>
 </section>
       <section class="streamfinSection" id="streamfinPlayback" aria-labelledby="streamfinPlaybackTitle"><h3 id="streamfinPlaybackTitle">Playback &amp; cache</h3>      <div class="inputContainer"><label class="inputLabel" for="musicCache">Song cache (MB)</label><input is="emby-input" type="number" id="musicCache" min="0" max="1000000" required>
-        <div class="fieldDescription">Songs you play are kept on this server, so skipping within a song and playing it again are instant. The least recently played make room when it is full. 0 turns it off.</div></div>
+        <div class="fieldDescription">Played songs are kept for faster skips and replays. Starred, playlist and frequently played songs are kept ready as FLAC when Monochrome is available, using up to half the cache. Other songs make room first. 0 turns caching off.</div></div>
+      <label class="checkboxContainer"><input is="emby-checkbox" type="checkbox" id="musicPrefetch"><span>Get the next song ready</span></label>
+      <div class="fieldDescription checkboxFieldDescription">Fetch one song ahead from a saved Subsonic queue, or the current album, while music plays. Requires the song cache.</div>
       <div class="inputContainer"><label class="inputLabel" for="streamfinCache">Catalog cache (minutes)</label><input is="emby-input" type="number" id="streamfinCache" min="1" max="1440" required></div>
 <h4>Save favourites to your library</h4>      <div class="inputContainer"><label class="inputLabel" for="musicFolder">Music library folder</label><input is="emby-input" type="text" id="musicFolder" autocomplete="off" spellcheck="false" placeholder="/media/music/StreamFin">
         <div class="fieldDescription">Albums you mark as a favourite (the heart on an album in the Music channel, or a star in a Subsonic app) are saved here as tagged FLAC files, one folder per artist and album, so they play offline and in any music app. Use a folder that belongs to a Jellyfin music library and that Jellyfin can write to. Existing files are never replaced. Albums are saved slowly, one song every 20 seconds, to stay within the catalog's limits. Leave empty to save nothing.</div></div>
@@ -223,6 +225,7 @@
             page.querySelector('#hideEcchi').checked = config.HideEcchiContent !== false;
             page.querySelector('#streamfinCache').value = config.MetadataCacheMinutes;
             page.querySelector('#musicCache').value = config.MusicCacheMb ?? 4096;
+            page.querySelector('#musicPrefetch').checked = config.MusicPrefetch !== false;
             page.querySelector('#musicYouTube').checked = config.MusicYouTube === true;
             applyOrder(page.querySelector('#playOrder'), config.MusicPlayOrder);
             applyOrder(page.querySelector('#searchOrder'), config.MusicSearchOrder);
@@ -288,6 +291,7 @@
             config.HideEcchiContent = page.querySelector('#hideEcchi').checked;
             config.MetadataCacheMinutes = Number(page.querySelector('#streamfinCache').value);
             config.MusicCacheMb = Number(page.querySelector('#musicCache').value);
+            config.MusicPrefetch = page.querySelector('#musicPrefetch').checked;
             config.MusicYouTube = page.querySelector('#musicYouTube').checked;
             // Switching YouTube off is how to keep to FLAC now; songs already kept from it still play.
             config.MusicAllowLossy = true;
