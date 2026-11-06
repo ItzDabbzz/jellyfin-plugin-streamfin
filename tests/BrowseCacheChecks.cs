@@ -46,5 +46,22 @@ internal static class BrowseCacheChecks
         Check(emptyCalls == 2, "empty provider responses do not poison future browsing");
         Check(await cache.GetAsync("revision2/title", lifetime, _ => Task.FromResult("new episodes"), default) == "new episodes",
             "cache revision keys bypass previous results");
+        var failures = 0;
+        Task<string> Failing(CancellationToken _) { failures++; throw new HttpRequestException("offline"); }
+        for (var attempt = 0; attempt < 2; attempt++)
+        {
+            try { await cache.GetAsync("cold-failure", lifetime, Failing, default); throw new Exception("Provider failure ignored"); }
+            catch (HttpRequestException) { }
+        }
+        Check(failures == 2, "cold request failures release shared requests and allow a retry");
+        using var pages = new BrowseCache<FilmPage>(page => page.Items.Count > 0);
+        var movie = new Film(1, FilmKind.Movie, "Example", 2026, "", null, 90, false);
+        var pageCalls = 0;
+        Task<FilmPage> Page(CancellationToken _) { pageCalls++; return Task.FromResult(new FilmPage([movie], true, 100)); }
+        await pages.GetAsync("movies/1", lifetime, Page, default);
+        var reused = await pages.GetAsync("movies/1", lifetime, Page, default);
+        await pages.GetAsync("movies/2", lifetime, Page, default);
+        Check(pageCalls == 2 && reused.TotalCount == 100 && reused.HasNext,
+            "cached catalog pages retain pagination metadata and separate page identities");
     }
 }

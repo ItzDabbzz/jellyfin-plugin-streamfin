@@ -17,7 +17,7 @@ public sealed class FlixSource(SafeHttp http) : IDisposable
     public static readonly Uri Watch = new("https://flixhqz.net/");
     public static readonly Uri Classic = new("https://flixhq.ws/");
     public static readonly string[] ServerOrder = ["vidmoly", "doodstream", "vidsrc"];
-    private readonly MemoryCache pages = new(new MemoryCacheOptions { SizeLimit = 2000 });
+    private readonly BrowseCache<Uri?> pages = new(value => value is not null);
     private static Regex Rx(string pattern) => new(pattern, RegexOptions.IgnoreCase | RegexOptions.Singleline, TimeSpan.FromSeconds(2));
     private static readonly Regex AnchorTag = Rx(@"<a\b([^>]*)>(.*?)</a>");
     private static readonly Regex M3u8 = Rx(@"https?://[^\s""'<>\\]+?\.m3u8(?:\?[^\s""'<>\\]*)?");
@@ -71,12 +71,12 @@ public sealed class FlixSource(SafeHttp http) : IDisposable
 
     private async Task<Uri?> FindAsync(Uri site, Film film, CancellationToken ct)
     {
-        var key = $"{site.Host}/{film.Kind}/{film.Id}";
-        if (pages.TryGetValue<Uri>(key, out var known)) return known;
-        var html = await http.TextAsync(new Uri(site, "search?keyword=" + Uri.EscapeDataString(film.Title)), ct);
-        var found = site == Watch ? MatchWatch(html, film) : MatchClassic(html, film);
-        if (found is not null) pages.Set(key, found, new MemoryCacheEntryOptions { Size = 1, AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(12) });
-        return found;
+        var key = $"{Plugin.Instance?.Configuration.CacheRevision}/{site.Host}/{film.Kind}/{film.Id}/{film.Year}/{film.Title}";
+        return await pages.GetAsync(key, TimeSpan.FromHours(12), async token =>
+        {
+            var html = await http.TextAsync(new Uri(site, "search?keyword=" + Uri.EscapeDataString(film.Title)), token);
+            return site == Watch ? MatchWatch(html, film) : MatchClassic(html, film);
+        }, ct);
     }
 
     // flixhqz.net slugs carry the title and year: /watch-movie/<title>-<year>-watch-online/.
