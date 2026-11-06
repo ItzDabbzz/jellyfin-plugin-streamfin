@@ -24,15 +24,18 @@ public sealed class MusicUpgradeTask(MusicAudio sources, MusicCatalog catalog, M
     public async Task ExecuteAsync(IProgress<double> progress, CancellationToken cancellationToken)
     {
         if (Plugin.Instance?.Configuration is not { Enabled: true, MusicEnabled: true } || !songs.Keeps) return;
-        songs.Load();
         var wanted = await WantedAsync(cancellationToken);
+        // Mark retained favourites before the first trim of files found on disk.
+        songs.Load(trim: false);
         var half = songs.LimitBytes / 2;
         var ready = new List<string>();
         long used = 0;
         bool Ready(string id)
         {
+            if (ready.Contains(id)) return true;
             var size = MusicCache.Size(id) ?? Typical;
-            if (songs.Kept(id) != "flac" || used + size > half) return false;
+            var flac = songs.Kept(id) == "flac" || MusicCache.Fetching(id) && MusicCache.Container(id) == "flac";
+            if (!flac || used + size > half) return false;
             ready.Add(id);
             used += size;
             return true;

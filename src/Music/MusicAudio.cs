@@ -164,8 +164,7 @@ public sealed class MusicAudio(SafeHttp http, MusicCatalog catalog, MusicCache s
     public async Task<bool> PrepareAsync(MusicTrack track, CancellationToken ct)
     {
         var kept = songs.Kept(track.Id);
-        if (kept == "m4a") return await UpgradeAsync(track, ct);
-        if (kept is not null || !MonochromeOn || YouTubeFirst || MusicCache.Fetching(track.Id) || HasFailed(track.Id, "monochrome") || catalog.Down) return false;
+        if (kept == "flac" || !MonochromeOn || MusicCache.Fetching(track.Id) || HasFailed(track.Id, "monochrome") || catalog.Down) return false;
         if (await MonochromeAsync(track, true, ct, TimeSpan.FromSeconds(20)) is not { } flac) return false;
         songs.Warm(flac);
         return MusicCache.Fetching(track.Id);

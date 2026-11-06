@@ -1144,7 +1144,7 @@ public sealed class SubsonicController(SubsonicAuth auth, MusicCatalog catalog, 
         AudioTicket ticket;
         try { ticket = await sources.ResolveAsync(recording, Ct); }
         catch (ProviderException ex) { throw new SubsonicError(0, ex.Message); }
-        prefetch.After(user.Id, track);
+        if (!download) prefetch.After(user.Id, track);
         var upstream = ticket.Upstream;
         var flac = ticket.Lossless;
         var (format, kbps) = download ? (AudioFormat.Raw, 0) : Choose(One("format"), One("maxBitRate"), Plugin.Instance?.Configuration.SubsonicPreferLossless != false);

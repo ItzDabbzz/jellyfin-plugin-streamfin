@@ -19,6 +19,8 @@ internal static class MusicPrefetchChecks
         var order = new[] { ("favourite", now.AddDays(-30)), ("old", now.AddDays(-2)), ("new", now) }
             .OrderBy(item => MusicCache.Order(item.Item1, item.Item2, favoured)).Select(item => item.Item1);
         Check(order.SequenceEqual(["old", "new", "favourite"]), "cache evicts ordinary songs by age before favourites");
+        Check(MusicPrefetch.Next([tracks[0], tracks[1], tracks[0], tracks[2]], tracks[0].Id) is null,
+            "duplicate queue entries are not guessed when the playing occurrence is unavailable");
         Check(new Configuration().MusicPrefetch && !MusicPrefetch.Enabled,
             "prefetch defaults on in settings but does not run without an enabled plugin");
     }

@@ -112,7 +112,7 @@ public sealed class MusicCache(SafeHttp http, ILogger<MusicCache> logger)
 
     public void Favour(IEnumerable<string> trackIds)
     {
-        lock (Gate) favoured = trackIds.ToHashSet();
+        lock (Gate) { favoured = trackIds.ToHashSet(); Trim(); }
     }
 
     // A whole song fetched by another program straight into the cache (yt-dlp, whose YouTube addresses only work
@@ -171,9 +171,9 @@ public sealed class MusicCache(SafeHttp http, ILogger<MusicCache> logger)
         }
     }
 
-    public void Load()
+    public void Load(bool trim = true)
     {
-        if (Limit > 0 && Root is { } root) lock (Gate) Scan(root);
+        if (Limit > 0 && Root is { } root) lock (Gate) Scan(root, trim);
     }
 
     // What the whole song is kept as, when it is on disk and can play while every source is out.
@@ -408,6 +408,7 @@ public sealed class MusicCache(SafeHttp http, ILogger<MusicCache> logger)
             foreach (var (id, entry) in kept)
             {
                 if (total <= Limit) break;
+                if (favoured.Contains(id) && Entries.Any(other => other.Value.Complete && !favoured.Contains(other.Key))) break;
                 if (DateTime.UtcNow - entry.Used < TimeSpan.FromMinutes(1)) continue;
                 if (!Entries.TryRemove(new KeyValuePair<string, Entry>(id, entry))) continue;
                 try { File.Delete(entry.Path); } catch (IOException) { } catch (UnauthorizedAccessException) { }
@@ -423,7 +424,7 @@ public sealed class MusicCache(SafeHttp http, ILogger<MusicCache> logger)
     }
 
     // What an earlier run left: finished songs are kept (their age orders eviction), half-fetched ones go.
-    private void Scan(string root)
+    private void Scan(string root, bool trim = true)
     {
         if (scanned == root) return;
         scanned = root;
@@ -449,7 +450,7 @@ public sealed class MusicCache(SafeHttp http, ILogger<MusicCache> logger)
             }
             var incoming = System.IO.Path.Combine(root, Incoming);
             if (Directory.Exists(incoming)) foreach (var path in Directory.EnumerateFiles(incoming)) Delete(path);
-            Trim();
+            if (trim) Trim();
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { logger.LogWarning("StreamFin music cache could not be read ({ErrorType})", ex.GetType().Name); }
     }
