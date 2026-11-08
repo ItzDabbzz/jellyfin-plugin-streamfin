@@ -7,12 +7,20 @@
     <RootNamespace>StreamFin</RootNamespace>
     <Version>0.12.0.7</Version>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <!-- CA1416 flags Windows-only API use across the codebase; the plugin runs on Windows and Linux servers, so it is not an error here. -->
+    <NoWarn>$(NoWarn);CA1416</NoWarn>
+    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
     <JellyfinReferencePath Condition="'$(JellyfinReferencePath)' == ''">../.jellyfin</JellyfinReferencePath>
   </PropertyGroup>
   <ItemGroup>
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    <PackageReference Include="AngleSharp" Version="1.9.1" />
     <Reference Include="$(JellyfinReferencePath)/*.dll" Private="false" />
     <EmbeddedResource Include="Configuration.html" />
+    <EmbeddedResource Include="Manga\Sources\catalog.json" LogicalName="StreamFin.Manga.Sources.catalog.json" />
+    <EmbeddedResource Include="Manga\Sources\legacy-catalog-v0.1.0.3.json" LogicalName="StreamFin.Manga.Sources.legacy-catalog-v0.1.0.3.json" />
+    <EmbeddedResource Include="Manga\Web\app.js" LogicalName="StreamFin.Manga.Web.app.js" />
+    <EmbeddedResource Include="Manga\Web\app.css" LogicalName="StreamFin.Manga.Web.app.css" />
     <EmbeddedResource Include="Assets/anime.png" />
     <EmbeddedResource Include="Assets/popcorn.png" />
     <EmbeddedResource Include="Assets/music.png" />

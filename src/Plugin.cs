@@ -2,6 +2,7 @@ using MediaBrowser.Common.Configuration;
 using MediaBrowser.Common.Plugins;
 using MediaBrowser.Model.Plugins;
 using MediaBrowser.Model.Serialization;
+using StreamFin.Manga;
 
 namespace StreamFin;
 
@@ -55,6 +56,7 @@ public sealed class Configuration : BasePluginConfiguration
     public SubsonicPassword[] SubsonicPasswords { get; set; } = [];
     // Incrementing this invalidates Jellyfin's own channel cache as well as ours.
     public int CacheRevision { get; set; }
+    public MangaOptions Manga { get; set; } = new();
 }
 
 public sealed class Plugin : BasePlugin<Configuration>, IHasWebPages

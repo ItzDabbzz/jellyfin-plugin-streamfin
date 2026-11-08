@@ -1,0 +1,465 @@
+[
+  {
+    "id": "mangadex",
+    "name": "MangaDex",
+    "baseUrl": "https://mangadex.org",
+    "kind": "mangadex",
+    "enabled": false,
+    "allowedHosts": [
+      "api.mangadex.org",
+      "uploads.mangadex.org"
+    ],
+    "status": "Experimental / failed live test: Response status code does not indicate success: 404 (Not Found)."
+  },
+  {
+    "id": "webtoon",
+    "name": "WEBTOON",
+    "baseUrl": "https://www.webtoons.com",
+    "enabled": false,
+    "searchPath": "/en/search?keyword={query}",
+    "searchItems": ".webtoon_list li",
+    "searchLink": "a._card_item",
+    "titleSelector": "h1.subj, h3.subj",
+    "descriptionSelector": ".summary",
+    "chapterItems": "li._episodeItem a",
+    "pagesSelector": "#_imageList img",
+    "imageAttribute": "data-url",
+    "allowedHosts": [
+      "webtoon-phinf.pstatic.net",
+      "swebtoon-phinf.pstatic.net"
+    ],
+    "status": "Experimental / failed live test: Invalid page count; source extraction failed.",
+    "maxPagination": 100,
+    "nextSelector": ".paginate a.pg_next"
+  },
+  {
+    "id": "mangaplus",
+    "name": "MANGA Plus",
+    "baseUrl": "https://mangaplus.shueisha.co.jp",
+    "kind": "mangaplus",
+    "status": "Experimental / failed live test: Account Banned: You have been banned from MANGA Plus by SHUEISHA due to a possible violation of our Terms of Service. https://mangaplus.shueisha.co.jp/terms_web/eng/ If you have a ",
+    "allowedHosts": [
+      "jumpg-webapi.tokyo-cdn.com",
+      "mangaplus-api-production.freetls.fastly.net"
+    ],
+    "enabled": false
+  },
+  {
+    "id": "anime-planet",
+    "name": "Anime-Planet",
+    "baseUrl": "https://www.anime-planet.com",
+    "kind": "unavailable",
+    "status": "Investigate partner-hosted reading; no download adapter",
+    "enabled": false
+  },
+  {
+    "id": "mangabuddy",
+    "name": "MangaBuddy",
+    "baseUrl": "https://mangabuddy.com",
+    "kind": "unavailable",
+    "status": "Candidate: specialized adapter not implemented",
+    "enabled": false
+  },
+  {
+    "id": "mangakakalot",
+    "name": "Mangakakalot",
+    "baseUrl": "https://mangakakalot.com",
+    "kind": "unavailable",
+    "status": "Candidate: specialized adapter not implemented",
+    "enabled": false
+  },
+  {
+    "id": "manganato",
+    "name": "Manganato",
+    "baseUrl": "https://manganato.com",
+    "kind": "unavailable",
+    "status": "Candidate: specialized adapter not implemented",
+    "enabled": false
+  },
+  {
+    "id": "mangafire",
+    "name": "MangaFire",
+    "baseUrl": "https://mangafire.to",
+    "kind": "unavailable",
+    "status": "Candidate: specialized adapter not implemented",
+    "enabled": false
+  },
+  {
+    "id": "mangapark",
+    "name": "MangaPark",
+    "baseUrl": "https://mangapark.net",
+    "kind": "unavailable",
+    "status": "Candidate: specialized adapter not implemented",
+    "enabled": false
+  },
+  {
+    "id": "mangakatana",
+    "name": "MangaKatana",
+    "baseUrl": "https://mangakatana.com",
+    "kind": "html",
+    "status": "Verified sample 2026-11-05 \u00b7 One Piece",
+    "searchPath": "/?search={query}&search_by=book_name",
+    "searchItems": "#book_list .item",
+    "searchLink": "h3 a",
+    "titleSelector": "h1.heading",
+    "descriptionSelector": ".summary",
+    "chapterItems": ".chapters .chapter a",
+    "scriptImagePattern": "var\\s+thzq\\s*=\\s*(?<images>\\[.*?\\])",
+    "allowedHosts": [
+      "i1.mangakatana.com",
+      "i2.mangakatana.com",
+      "i3.mangakatana.com"
+    ],
+    "enabled": true
+  },
+  {
+    "id": "mangareader",
+    "name": "MangaReader",
+    "baseUrl": "https://mangareader.to",
+    "kind": "unavailable",
+    "status": "Candidate: specialized adapter not implemented",
+    "enabled": false
+  },
+  {
+    "id": "weebcentral",
+    "name": "Weeb Central",
+    "baseUrl": "https://weebcentral.com",
+    "kind": "html",
+    "status": "Verified sample 2026-11-05 \u00b7 One Piece",
+    "searchPath": "/search/data?text={query}&display_mode=Full%20Display",
+    "searchItems": "article",
+    "searchLink": "a[href*=\"/series/\"]",
+    "titleSelector": "h1",
+    "descriptionSelector": "p",
+    "chaptersPath": "/series/{seriesId}/full-chapter-list",
+    "chapterItems": "a[href*=\"/chapters/\"]",
+    "pagesSelector": "img",
+    "allowedHosts": [
+      "temp.compsci88.com",
+      "hot.planeptune.us",
+      "scans-hot.planeptune.us",
+      "scans.lastation.us",
+      "meo.comick.pictures"
+    ],
+    "pagesPath": "/chapters/{chapterId}/images?is_prev=False&current_page=1&reading_style=long_strip",
+    "enabled": true
+  },
+  {
+    "id": "comick",
+    "name": "Comick",
+    "baseUrl": "https://comick.io",
+    "kind": "unavailable",
+    "status": "Candidate: specialized adapter not implemented",
+    "enabled": false
+  },
+  {
+    "id": "bato",
+    "name": "Bato",
+    "baseUrl": "https://bato.to",
+    "kind": "unavailable",
+    "status": "Candidate: specialized adapter not implemented",
+    "enabled": false
+  },
+  {
+    "id": "asura",
+    "name": "Asura Scans",
+    "baseUrl": "https://asuracomic.net",
+    "kind": "unavailable",
+    "status": "Candidate: specialized adapter not implemented",
+    "enabled": false
+  },
+  {
+    "id": "flame",
+    "name": "Flame Comics",
+    "baseUrl": "https://flamecomics.com",
+    "kind": "unavailable",
+    "status": "Candidate: specialized adapter not implemented",
+    "enabled": false
+  },
+  {
+    "id": "reaper",
+    "name": "Reaper Scans",
+    "baseUrl": "https://reaperscans.com",
+    "kind": "unavailable",
+    "status": "Candidate: specialized adapter not implemented",
+    "enabled": false
+  },
+  {
+    "id": "mangahere",
+    "name": "MangaHere",
+    "baseUrl": "https://www.mangahere.cc",
+    "kind": "unavailable",
+    "status": "Candidate: specialized adapter not implemented",
+    "enabled": false
+  },
+  {
+    "id": "mangafox",
+    "name": "FanFox",
+    "baseUrl": "https://fanfox.net",
+    "kind": "unavailable",
+    "status": "Candidate: specialized adapter not implemented",
+    "enabled": false
+  },
+  {
+    "id": "mangainn",
+    "name": "MangaInn",
+    "baseUrl": "https://www.mangainn.net",
+    "kind": "unavailable",
+    "status": "Candidate: specialized adapter not implemented",
+    "enabled": false
+  },
+  {
+    "id": "mangadistrict",
+    "name": "Manga District",
+    "baseUrl": "https://mangadistrict.com",
+    "enabled": false,
+    "status": "Experimental / failed live test: Search returned no titles."
+  },
+  {
+    "id": "mangaclash",
+    "name": "MangaClash",
+    "baseUrl": "https://mangaclash.com",
+    "enabled": false,
+    "status": "Experimental / failed live test: An error occurred while sending the request."
+  },
+  {
+    "id": "mangahub",
+    "name": "MangaHub",
+    "baseUrl": "https://mangahub.io",
+    "enabled": false,
+    "status": "Experimental / failed live test: Response status code does not indicate success: 403 (Forbidden)."
+  },
+  {
+    "id": "manhwaclan",
+    "name": "Manhwa Clan",
+    "baseUrl": "https://manhwaclan.com",
+    "enabled": false,
+    "status": "Experimental / failed live test: Response status code does not indicate success: 403 (Forbidden)."
+  },
+  {
+    "id": "manhwatop",
+    "name": "ManhwaTop",
+    "baseUrl": "https://manhwatop.com",
+    "enabled": false,
+    "status": "Experimental / failed live test: Response status code does not indicate success: 403 (Forbidden)."
+  },
+  {
+    "id": "manhuaplus",
+    "name": "ManhuaPlus",
+    "baseUrl": "https://manhuaplus.com",
+    "enabled": false,
+    "status": "Experimental / failed live test: Host not in source allowlist: manhuaus5.wordpress.com",
+    "allowedHosts": [
+      "manhuaus5.files.wordpress.com",
+      "manhuaus6.files.wordpress.com",
+      "manhuaus.files.wordpress.com",
+      "manhuaus5.wordpress.com"
+    ]
+  },
+  {
+    "id": "manhuafast",
+    "name": "ManhuaFast",
+    "baseUrl": "https://manhuafast.com",
+    "enabled": false,
+    "status": "Experimental / failed live test: Response status code does not indicate success: 403 (Forbidden)."
+  },
+  {
+    "id": "mangagg",
+    "name": "MangaGG",
+    "baseUrl": "https://mangagg.com",
+    "enabled": false,
+    "status": "Experimental / failed live test: Response status code does not indicate success: 403 (Forbidden)."
+  },
+  {
+    "id": "mangachill",
+    "name": "MangaChill",
+    "baseUrl": "https://mangachill.me",
+    "enabled": false,
+    "status": "Experimental / failed live test: An error occurred while sending the request."
+  },
+  {
+    "id": "mangarockteam",
+    "name": "Manga Rock Team",
+    "baseUrl": "https://mangarockteam.com",
+    "enabled": false,
+    "status": "Experimental / failed live test: An error occurred while sending the request."
+  },
+  {
+    "id": "mangafreak",
+    "name": "MangaFreak",
+    "baseUrl": "https://mangafreak.me",
+    "enabled": false,
+    "status": "Experimental / failed live test: Host not in source allowlist: ww3.mangafreak.me"
+  },
+  {
+    "id": "topmanhua",
+    "name": "TopManhua",
+    "baseUrl": "https://topmanhua.com",
+    "enabled": false,
+    "status": "Experimental / failed live test: Host not in source allowlist: araplhn.org"
+  },
+  {
+    "id": "kunmanga",
+    "name": "KunManga",
+    "baseUrl": "https://kunmanga.com",
+    "enabled": false,
+    "status": "Experimental / failed live test: Response status code does not indicate success: 403 (Forbidden)."
+  },
+  {
+    "id": "harimanga",
+    "name": "HariManga",
+    "baseUrl": "https://harimanga.com",
+    "enabled": false,
+    "status": "Experimental / failed live test: An error occurred while sending the request."
+  },
+  {
+    "id": "zinmanga",
+    "name": "ZinManga",
+    "baseUrl": "https://zinmanga.com",
+    "enabled": false,
+    "status": "Experimental / failed live test: An error occurred while sending the request."
+  },
+  {
+    "id": "mangasy",
+    "name": "MangaSY",
+    "baseUrl": "https://www.mangasy.com",
+    "enabled": false,
+    "status": "Experimental / failed live test: An error occurred while sending the request."
+  },
+  {
+    "id": "coffeemanga",
+    "name": "Coffee Manga",
+    "baseUrl": "https://coffeemanga.io",
+    "enabled": false,
+    "status": "Experimental / failed live test: Host not in source allowlist: coffeemanga.moe"
+  },
+  {
+    "id": "likemanga",
+    "name": "LikeManga",
+    "baseUrl": "https://likemanga.io",
+    "enabled": false,
+    "status": "Experimental / failed live test: An error occurred while sending the request."
+  },
+  {
+    "id": "mangastic",
+    "name": "Mangastic",
+    "baseUrl": "https://mangastic.me",
+    "enabled": false,
+    "status": "Experimental / failed live test: An error occurred while sending the request."
+  },
+  {
+    "id": "mangageko",
+    "name": "MangaGeko",
+    "baseUrl": "https://www.mangageko.com",
+    "enabled": false,
+    "status": "Experimental / failed live test: An error occurred while sending the request."
+  },
+  {
+    "id": "mangareadorg",
+    "name": "MangaRead.org",
+    "baseUrl": "https://www.mangaread.org",
+    "enabled": true,
+    "chaptersPath": "{series}/ajax/chapters/",
+    "chaptersMethod": "POST",
+    "status": "Verified sample 2026-11-05 \u00b7 One Piece Episode A"
+  },
+  {
+    "id": "mangasushi",
+    "name": "Mangasushi",
+    "baseUrl": "https://mangasushi.org",
+    "enabled": false,
+    "chaptersPath": "{series}/ajax/chapters/",
+    "chaptersMethod": "POST",
+    "status": "Experimental / failed live test: Search returned no titles."
+  },
+  {
+    "id": "mangapill",
+    "name": "MangaPill",
+    "baseUrl": "https://mangapill.com",
+    "enabled": false,
+    "searchPath": "/search?q={query}&type=&status=",
+    "searchItems": "div.grid > div",
+    "searchLink": "a[href*=\"/manga/\"]",
+    "titleSelector": "h1",
+    "descriptionSelector": ".text-sm",
+    "chapterItems": "#chapters a",
+    "pagesSelector": "img.js-page",
+    "imageAttribute": "data-src",
+    "status": "Experimental / failed live test: Search returned no titles.",
+    "allowedHosts": [
+      "cdn.readdetectiveconan.com"
+    ]
+  },
+  {
+    "id": "manhuaus",
+    "name": "ManhuaUS",
+    "baseUrl": "https://manhuaus.com",
+    "enabled": false,
+    "chaptersPath": "{series}/ajax/chapters/",
+    "chaptersMethod": "POST",
+    "status": "Experimental / failed live test: Response status code does not indicate success: 403 (Forbidden)."
+  },
+  {
+    "id": "manhwanex",
+    "name": "ManhwaNex",
+    "baseUrl": "https://manhwanex.com",
+    "enabled": true,
+    "chaptersPath": "{series}/ajax/chapters/",
+    "chaptersMethod": "POST",
+    "status": "Verified sample 2026-11-05 \u00b7 Lord of Summons! Sudden Mutation",
+    "allowedHosts": [
+      "cdn.manhwanex.com"
+    ]
+  },
+  {
+    "id": "manhwaden",
+    "name": "ManhwaDen",
+    "baseUrl": "https://www.manhwaden.com",
+    "enabled": true,
+    "chaptersPath": "{series}/ajax/chapters/",
+    "chaptersMethod": "POST",
+    "status": "Verified sample 2026-11-05 \u00b7 The Teacher in the Trap",
+    "allowedHosts": [
+      "remanhwa.cc"
+    ]
+  },
+  {
+    "id": "bunmanga",
+    "name": "Bun Manga",
+    "baseUrl": "https://bunmanga.com",
+    "enabled": true,
+    "chaptersPath": "{series}/ajax/chapters/",
+    "chaptersMethod": "POST",
+    "status": "Verified sample 2026-11-05 \u00b7 10 Years Where I Loved You the Most",
+    "allowedHosts": [
+      "cdn.bunmanga.com"
+    ]
+  },
+  {
+    "id": "gourmetscans",
+    "name": "Gourmet Scans",
+    "baseUrl": "https://gourmetsupremacy.com",
+    "enabled": true,
+    "chaptersPath": "{series}/ajax/chapters/",
+    "chaptersMethod": "POST",
+    "status": "Verified sample 2026-11-05 \u00b7 Please Save My Child"
+  },
+  {
+    "id": "mangaeclipse",
+    "name": "Manga Eclipse",
+    "baseUrl": "https://mangaeclipse.com",
+    "enabled": false,
+    "chaptersPath": "{series}/ajax/chapters/",
+    "chaptersMethod": "POST",
+    "status": "Experimental / failed live test: Search returned no titles."
+  },
+  {
+    "id": "manhuanext",
+    "name": "Manhuanext",
+    "baseUrl": "https://manhuanext.com",
+    "enabled": false,
+    "chaptersPath": "{series}/ajax/chapters/",
+    "chaptersMethod": "POST",
+    "status": "Experimental / failed live test: Search returned no titles."
+  }
+]

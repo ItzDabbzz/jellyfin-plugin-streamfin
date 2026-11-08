@@ -3,6 +3,8 @@ using MediaBrowser.Controller.Plugins;
 using MediaBrowser.Controller.Channels;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
+using StreamFin.Manga;
+using StreamFin.Manga.Sources;
 
 namespace StreamFin;
 
@@ -52,5 +54,18 @@ public sealed class ServiceRegistration : IPluginServiceRegistrator
         services.AddScoped<ChannelAccessFilter>();
         services.AddScoped<ArtworkAccess>();
         services.Configure<MvcOptions>(options => options.Filters.AddService<ChannelAccessFilter>());
+        // Manga subsystem: its own store, sources, download queue and optional File Transformation page injection.
+        services.AddSingleton<StreamFin.Manga.Store>();
+        services.AddSingleton<ISourceHttp, MangaHttp>();
+        services.AddSingleton<MangaSourceRegistry>();
+        services.AddSingleton<LibraryStorage>();
+        services.AddSingleton<IPageEncoder, AvifEncoder>();
+        services.AddSingleton<ChapterDownloader>();
+        services.AddSingleton<MangaService>();
+        services.AddSingleton<CoverService>();
+        services.AddSingleton<SourceTester>();
+        services.AddSingleton<QueueService>();
+        services.AddHostedService(provider => provider.GetRequiredService<QueueService>());
+        services.AddHostedService<MangaInjectionService>();
     }
 }

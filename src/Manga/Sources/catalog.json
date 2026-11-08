@@ -1,0 +1,1043 @@
+[
+  {
+    "id": "mangadex",
+    "name": "MangaDex",
+    "baseUrl": "https://mangadex.org",
+    "kind": "mangadex",
+    "enabled": false,
+    "allowedHosts": [
+      "api.mangadex.org",
+      "uploads.mangadex.org"
+    ],
+    "status": "Verified"
+  },
+  {
+    "id": "webtoon",
+    "name": "WEBTOON",
+    "baseUrl": "https://www.webtoons.com",
+    "enabled": false,
+    "searchPath": "/en/search?keyword={query}",
+    "searchItems": ".webtoon_list li",
+    "searchLink": "a._card_item",
+    "titleSelector": "h1.subj, h3.subj",
+    "descriptionSelector": ".summary",
+    "chapterItems": "li._episodeItem a",
+    "pagesSelector": "#_imageList img",
+    "imageAttribute": "data-url",
+    "allowedHosts": [
+      "webtoon-phinf.pstatic.net",
+      "swebtoon-phinf.pstatic.net"
+    ],
+    "status": "Retired · Invalid page count; source extraction failed.",
+    "maxPagination": 100,
+    "nextSelector": ".paginate a.pg_next",
+    "retired": true
+  },
+  {
+    "id": "mangaplus",
+    "name": "MANGA Plus",
+    "baseUrl": "https://mangaplus.shueisha.co.jp",
+    "kind": "mangaplus",
+    "status": "Retired · Protected chapter images are unsupported.",
+    "allowedHosts": [
+      "jumpg-webapi.tokyo-cdn.com",
+      "mangaplus-api-production.freetls.fastly.net"
+    ],
+    "enabled": false,
+    "retired": true
+  },
+  {
+    "id": "anime-planet",
+    "name": "Anime-Planet",
+    "baseUrl": "https://www.anime-planet.com",
+    "kind": "unavailable",
+    "status": "Retired · Public access blocked (HTTP 403).",
+    "enabled": false,
+    "retired": true
+  },
+  {
+    "id": "mangabuddy",
+    "name": "MangaBuddy",
+    "baseUrl": "https://mangabuddy.com",
+    "kind": "unavailable",
+    "status": "Retired · No verified public download adapter.",
+    "enabled": false,
+    "retired": true
+  },
+  {
+    "id": "mangakakalot",
+    "name": "Mangakakalot",
+    "baseUrl": "https://mangakakalot.com",
+    "kind": "unavailable",
+    "status": "Retired · Origin server timed out (HTTP 522).",
+    "enabled": false,
+    "retired": true
+  },
+  {
+    "id": "manganato",
+    "name": "Manganato",
+    "baseUrl": "https://manganato.com",
+    "kind": "unavailable",
+    "status": "Retired · Origin server timed out (HTTP 522).",
+    "enabled": false,
+    "retired": true
+  },
+  {
+    "id": "mangafire",
+    "name": "MangaFire",
+    "baseUrl": "https://mangafire.to",
+    "kind": "unavailable",
+    "status": "Retired · No verified public download adapter.",
+    "enabled": false,
+    "retired": true
+  },
+  {
+    "id": "mangapark",
+    "name": "MangaPark",
+    "baseUrl": "https://mangapark.net",
+    "kind": "unavailable",
+    "status": "Retired · Redirected to an unrelated or parked website.",
+    "enabled": false,
+    "retired": true
+  },
+  {
+    "id": "mangakatana",
+    "name": "MangaKatana",
+    "baseUrl": "https://mangakatana.com",
+    "kind": "html",
+    "status": "Verified",
+    "searchPath": "/?search={query}&search_by=book_name",
+    "searchItems": "#book_list .item",
+    "searchLink": "h3 a",
+    "titleSelector": "h1.heading",
+    "descriptionSelector": ".summary",
+    "chapterItems": ".chapters .chapter a",
+    "scriptImagePattern": "var\\s+thzq\\s*=\\s*(?<images>\\[.*?\\])",
+    "allowedHosts": [
+      "i1.mangakatana.com",
+      "i2.mangakatana.com",
+      "i3.mangakatana.com"
+    ],
+    "enabled": true
+  },
+  {
+    "id": "mangareader",
+    "name": "MangaReader",
+    "baseUrl": "https://mangareader.to",
+    "kind": "unavailable",
+    "status": "Retired · Origin server timed out (HTTP 522).",
+    "enabled": false,
+    "retired": true
+  },
+  {
+    "id": "weebcentral",
+    "name": "Weeb Central",
+    "baseUrl": "https://weebcentral.com",
+    "kind": "html",
+    "status": "Verified",
+    "searchPath": "/search/data?text={query}&display_mode=Full%20Display",
+    "searchItems": "article",
+    "searchLink": "a[href*=\"/series/\"]",
+    "titleSelector": "h1",
+    "descriptionSelector": "p",
+    "chaptersPath": "/series/{seriesId}/full-chapter-list",
+    "chapterItems": "a[href*=\"/chapters/\"]",
+    "pagesSelector": "img",
+    "allowedHosts": [
+      "temp.compsci88.com",
+      "hot.planeptune.us",
+      "scans-hot.planeptune.us",
+      "scans.lastation.us",
+      "official.lowee.us",
+      "meo.comick.pictures"
+    ],
+    "pagesPath": "/chapters/{chapterId}/images?is_prev=False&current_page=1&reading_style=long_strip",
+    "enabled": true
+  },
+  {
+    "id": "comick",
+    "name": "Comick",
+    "baseUrl": "https://comick.io",
+    "kind": "unavailable",
+    "status": "Retired · No verified public download adapter.",
+    "enabled": false,
+    "retired": true
+  },
+  {
+    "id": "bato",
+    "name": "Bato",
+    "baseUrl": "https://bato.to",
+    "kind": "unavailable",
+    "status": "Retired · Site closure notice.",
+    "enabled": false,
+    "retired": true
+  },
+  {
+    "id": "asura",
+    "name": "Asura Scans",
+    "baseUrl": "https://asuracomic.net",
+    "kind": "unavailable",
+    "status": "Retired · No verified public download adapter.",
+    "enabled": false,
+    "retired": true
+  },
+  {
+    "id": "flame",
+    "name": "Flame Comics",
+    "baseUrl": "https://flamecomics.xyz",
+    "kind": "flame",
+    "status": "Verified",
+    "enabled": false,
+    "allowedHosts": [
+      "cdn.flamecomics.xyz"
+    ]
+  },
+  {
+    "id": "reaper",
+    "name": "Reaper Scans",
+    "baseUrl": "https://reaperscans.com",
+    "kind": "unavailable",
+    "status": "Retired · Origin server timed out (HTTP 522).",
+    "enabled": false,
+    "retired": true
+  },
+  {
+    "id": "mangahere",
+    "name": "MangaHere",
+    "baseUrl": "https://www.mangahere.cc",
+    "kind": "unavailable",
+    "status": "Retired · No verified public download adapter.",
+    "enabled": false,
+    "retired": true
+  },
+  {
+    "id": "mangafox",
+    "name": "FanFox",
+    "baseUrl": "https://fanfox.net",
+    "kind": "unavailable",
+    "status": "Retired · No verified public download adapter.",
+    "enabled": false,
+    "retired": true
+  },
+  {
+    "id": "mangainn",
+    "name": "MangaInn",
+    "baseUrl": "https://www.mangainn.net",
+    "kind": "unavailable",
+    "status": "Retired · Redirected to an unrelated or parked website.",
+    "enabled": false,
+    "retired": true
+  },
+  {
+    "id": "mangadistrict",
+    "name": "Manga District",
+    "baseUrl": "https://mangadistrict.com",
+    "enabled": false,
+    "status": "Retired · No complete chapter download verified.",
+    "retired": true
+  },
+  {
+    "id": "mangaclash",
+    "name": "MangaClash",
+    "baseUrl": "https://mangaclash.com",
+    "enabled": false,
+    "status": "Retired · Redirected to an unrelated or parked website.",
+    "retired": true
+  },
+  {
+    "id": "mangahub",
+    "name": "MangaHub",
+    "baseUrl": "https://mangahub.io",
+    "enabled": false,
+    "status": "Retired · Public access blocked (HTTP 403).",
+    "retired": true
+  },
+  {
+    "id": "manhwaclan",
+    "name": "Manhwa Clan",
+    "baseUrl": "https://manhwaclan.com",
+    "enabled": false,
+    "status": "Retired · Public access blocked (HTTP 403).",
+    "retired": true
+  },
+  {
+    "id": "manhwatop",
+    "name": "ManhwaTop",
+    "baseUrl": "https://manhwatop.com",
+    "enabled": false,
+    "status": "Retired · Public access blocked (HTTP 403).",
+    "retired": true
+  },
+  {
+    "id": "manhuaplus",
+    "name": "ManhuaPlus",
+    "baseUrl": "https://manhuaplus.com",
+    "enabled": false,
+    "status": "Retired · A task was canceled.",
+    "allowedHosts": [
+      "manhuaus5.files.wordpress.com",
+      "manhuaus6.files.wordpress.com",
+      "manhuaus.files.wordpress.com",
+      "manhuaus5.wordpress.com"
+    ],
+    "retired": true
+  },
+  {
+    "id": "manhuafast",
+    "name": "ManhuaFast",
+    "baseUrl": "https://manhuafast.com",
+    "enabled": false,
+    "status": "Retired · Public access blocked (HTTP 403).",
+    "retired": true
+  },
+  {
+    "id": "mangagg",
+    "name": "MangaGG",
+    "baseUrl": "https://mangagg.com",
+    "enabled": false,
+    "status": "Retired · Public access blocked (HTTP 403).",
+    "retired": true
+  },
+  {
+    "id": "mangachill",
+    "name": "MangaChill",
+    "baseUrl": "https://mangachill.me",
+    "enabled": false,
+    "status": "Retired · No public reader reached at this address.",
+    "retired": true
+  },
+  {
+    "id": "mangarockteam",
+    "name": "Manga Rock Team",
+    "baseUrl": "https://mangarockteam.com",
+    "enabled": false,
+    "status": "Retired · No public reader reached at this address.",
+    "retired": true
+  },
+  {
+    "id": "mangafreak",
+    "name": "MangaFreak",
+    "baseUrl": "https://ww3.mangafreak.me",
+    "enabled": false,
+    "status": "Verified",
+    "kind": "html",
+    "searchPath": "/Find/{query}",
+    "searchItems": ".manga_search_item",
+    "searchLink": "h3 a",
+    "titleSelector": ".manga_series_data h1",
+    "descriptionSelector": ".manga_series_description",
+    "chapterItems": ".manga_series_list a[href*=\"Read\"], .series_sub_chapter_list a",
+    "pagesSelector": "img#gohere",
+    "allowedHosts": [
+      "images.mangafreak.me",
+      "cdn.mangafreak.me"
+    ]
+  },
+  {
+    "id": "topmanhua",
+    "name": "TopManhua",
+    "baseUrl": "https://topmanhua.com",
+    "enabled": false,
+    "status": "Retired · Redirected to an unrelated or parked website.",
+    "retired": true
+  },
+  {
+    "id": "kunmanga",
+    "name": "KunManga",
+    "baseUrl": "https://kunmanga.com",
+    "enabled": false,
+    "status": "Retired · Public access blocked (HTTP 403).",
+    "retired": true
+  },
+  {
+    "id": "harimanga",
+    "name": "HariManga",
+    "baseUrl": "https://harimanga.com",
+    "enabled": false,
+    "status": "Retired · No public reader reached at this address.",
+    "retired": true
+  },
+  {
+    "id": "zinmanga",
+    "name": "ZinManga",
+    "baseUrl": "https://www.zinmanga.net",
+    "enabled": false,
+    "status": "Verified",
+    "kind": "zin",
+    "allowedHosts": [
+      "cdn.zinmanga1.com",
+      "cdn2.zinmanga1.com"
+    ],
+    "pagesSelector": ".reading-content img.wp-manga-chapter-img",
+    "imageAttribute": "data-backup",
+    "maxPagination": 100
+  },
+  {
+    "id": "mangasy",
+    "name": "MangaSY",
+    "baseUrl": "https://www.mangasy.com",
+    "enabled": false,
+    "status": "Retired · No public reader reached at this address.",
+    "retired": true
+  },
+  {
+    "id": "coffeemanga",
+    "name": "Coffee Manga",
+    "baseUrl": "https://coffeemanga.io",
+    "enabled": false,
+    "status": "Retired · Redirected to an unrelated or parked website.",
+    "retired": true
+  },
+  {
+    "id": "likemanga",
+    "name": "LikeManga",
+    "baseUrl": "https://likemanga.io",
+    "enabled": false,
+    "status": "Retired · Redirected to an unrelated or parked website.",
+    "retired": true
+  },
+  {
+    "id": "mangastic",
+    "name": "Mangastic",
+    "baseUrl": "https://mangastic.me",
+    "enabled": false,
+    "status": "Retired · Redirected to an unrelated or parked website.",
+    "retired": true
+  },
+  {
+    "id": "mangageko",
+    "name": "MangaGeko",
+    "baseUrl": "https://www.mangageko.com",
+    "enabled": false,
+    "status": "Retired · Redirected to an unrelated or parked website.",
+    "retired": true
+  },
+  {
+    "id": "mangareadorg",
+    "name": "MangaRead.org",
+    "baseUrl": "https://www.mangaread.org",
+    "enabled": true,
+    "chaptersPath": "{series}/ajax/chapters/",
+    "chaptersMethod": "POST",
+    "status": "Verified"
+  },
+  {
+    "id": "mangasushi",
+    "name": "Mangasushi",
+    "baseUrl": "https://mangasushi.org",
+    "enabled": false,
+    "chaptersPath": "{series}/ajax/chapters/",
+    "chaptersMethod": "POST",
+    "status": "Verified"
+  },
+  {
+    "id": "mangapill",
+    "name": "MangaPill",
+    "baseUrl": "https://mangapill.com",
+    "enabled": false,
+    "searchPath": "/search?q={query}",
+    "searchItems": "div.grid > div",
+    "searchLink": "a.mb-2",
+    "titleSelector": "h1",
+    "descriptionSelector": ".text-sm",
+    "chapterItems": "#chapters a",
+    "pagesSelector": "img.js-page",
+    "imageAttribute": "data-src",
+    "status": "Verified",
+    "allowedHosts": [
+      "cdn.readdetectiveconan.com"
+    ]
+  },
+  {
+    "id": "manhuaus",
+    "name": "ManhuaUS",
+    "baseUrl": "https://manhuaus.com",
+    "enabled": false,
+    "chaptersPath": "{series}/ajax/chapters/",
+    "chaptersMethod": "POST",
+    "status": "Retired · Public access blocked (HTTP 403).",
+    "retired": true
+  },
+  {
+    "id": "manhwanex",
+    "name": "ManhwaNex",
+    "baseUrl": "https://manhwanex.com",
+    "enabled": true,
+    "chaptersPath": "{series}/ajax/chapters/",
+    "chaptersMethod": "POST",
+    "status": "Verified",
+    "allowedHosts": [
+      "cdn.manhwanex.com"
+    ]
+  },
+  {
+    "id": "manhwaden",
+    "name": "ManhwaDen",
+    "baseUrl": "https://www.manhwaden.com",
+    "enabled": true,
+    "chaptersPath": "{series}/ajax/chapters/",
+    "chaptersMethod": "POST",
+    "status": "Verified",
+    "allowedHosts": [
+      "remanhwa.cc"
+    ],
+    "adult": true
+  },
+  {
+    "id": "bunmanga",
+    "name": "Bun Manga",
+    "baseUrl": "https://bunmanga.com",
+    "enabled": true,
+    "chaptersPath": "{series}/ajax/chapters/",
+    "chaptersMethod": "POST",
+    "status": "Verified",
+    "allowedHosts": [
+      "cdn.bunmanga.com"
+    ]
+  },
+  {
+    "id": "gourmetscans",
+    "name": "Gourmet Scans",
+    "baseUrl": "https://gourmetsupremacy.com",
+    "enabled": true,
+    "chaptersPath": "{series}/ajax/chapters/",
+    "chaptersMethod": "POST",
+    "status": "Verified"
+  },
+  {
+    "id": "mangaeclipse",
+    "name": "Manga Eclipse",
+    "baseUrl": "https://mangaeclipse.com",
+    "enabled": false,
+    "chaptersPath": "{series}/ajax/chapters/",
+    "chaptersMethod": "POST",
+    "status": "Verified"
+  },
+  {
+    "id": "manhuanext",
+    "name": "Manhuanext",
+    "baseUrl": "https://manhuanext.com",
+    "enabled": false,
+    "chaptersPath": "{series}/ajax/chapters/",
+    "chaptersMethod": "POST",
+    "status": "Verified"
+  },
+  {
+    "id": "akazascans",
+    "name": "Akaza Scans",
+    "baseUrl": "https://akazascans.org",
+    "enabled": false,
+    "status": "Verified",
+    "delayMilliseconds": 1500,
+    "searchPath": "/?s={query}",
+    "searchItems": ".listupd .bs",
+    "searchLink": ".tt a, a",
+    "titleSelector": "h1.entry-title",
+    "descriptionSelector": ".entry-content.entry-content-single, .desc",
+    "chapterItems": ".eplister a",
+    "pagesSelector": "#readerarea img",
+    "scriptImagePattern": "\"images\"\\s*:\\s*(?<images>\\[.*?\\])"
+  },
+  {
+    "id": "aquamanga",
+    "name": "Aqua Manga",
+    "baseUrl": "https://aquareader.org",
+    "enabled": false,
+    "status": "Verified",
+    "delayMilliseconds": 1500,
+    "chaptersPath": "{series}/ajax/chapters/",
+    "chaptersMethod": "POST",
+    "titleSelector": "h1"
+  },
+  {
+    "id": "arenascans",
+    "name": "Arena Scans",
+    "baseUrl": "https://arenascan.com",
+    "enabled": false,
+    "status": "Verified",
+    "delayMilliseconds": 1500,
+    "searchPath": "/?s={query}",
+    "searchItems": ".listupd .bs",
+    "searchLink": ".tt a, a",
+    "titleSelector": "h1.entry-title",
+    "descriptionSelector": ".entry-content.entry-content-single, .desc",
+    "chapterItems": ".eplister a",
+    "pagesSelector": "#readerarea img",
+    "scriptImagePattern": "\"images\"\\s*:\\s*(?<images>\\[.*?\\])",
+    "allowedHosts": [
+      "cdn.arenascan.com"
+    ],
+    "adult": true
+  },
+  {
+    "id": "asterscans",
+    "name": "Aster Scans",
+    "baseUrl": "https://asterscans.com",
+    "enabled": false,
+    "status": "Verified",
+    "delayMilliseconds": 1500,
+    "searchPath": "/?s={query}",
+    "searchItems": ".listupd .bs",
+    "searchLink": ".tt a, a",
+    "titleSelector": "h1.entry-title",
+    "descriptionSelector": ".entry-content.entry-content-single, .desc",
+    "chapterItems": ".eplister a",
+    "pagesSelector": "#readerarea img",
+    "scriptImagePattern": "\"images\"\\s*:\\s*(?<images>\\[.*?\\])"
+  },
+  {
+    "id": "athreascans",
+    "name": "Athrea Scans",
+    "baseUrl": "https://athreascans.com",
+    "enabled": false,
+    "status": "Verified",
+    "delayMilliseconds": 1500,
+    "searchPath": "/?s={query}",
+    "searchItems": ".listupd .bs",
+    "searchLink": ".tt a, a",
+    "titleSelector": "h1.entry-title",
+    "descriptionSelector": ".entry-content.entry-content-single, .desc",
+    "chapterItems": ".eplister a",
+    "pagesSelector": "#readerarea img",
+    "scriptImagePattern": "\"images\"\\s*:\\s*(?<images>\\[.*?\\])",
+    "adult": true
+  },
+  {
+    "id": "boratscans",
+    "name": "Borat Scans",
+    "baseUrl": "https://boratscans.com",
+    "enabled": false,
+    "status": "Retired · Public access blocked (HTTP 403).",
+    "delayMilliseconds": 1500,
+    "chaptersPath": "{series}/ajax/chapters/",
+    "chaptersMethod": "POST",
+    "retired": true
+  },
+  {
+    "id": "cucumbermanga",
+    "name": "Cucumber Manga",
+    "baseUrl": "https://cucumbermanga.com",
+    "enabled": false,
+    "status": "Verified",
+    "delayMilliseconds": 1500,
+    "chaptersPath": "{series}/ajax/chapters/",
+    "chaptersMethod": "POST",
+    "adult": true
+  },
+  {
+    "id": "decadencescans",
+    "name": "Decadence Scans",
+    "baseUrl": "https://reader.decadencescans.com",
+    "enabled": false,
+    "status": "Verified",
+    "delayMilliseconds": 1500,
+    "chaptersPath": "{series}/ajax/chapters/",
+    "chaptersMethod": "POST",
+    "pagesPath": "{chapter}?style=list",
+    "adult": true
+  },
+  {
+    "id": "erosscans",
+    "name": "Scythe Scans",
+    "baseUrl": "https://scythescans.com",
+    "enabled": false,
+    "status": "Verified",
+    "delayMilliseconds": 1500,
+    "searchPath": "/?s={query}",
+    "searchItems": ".listupd .bs",
+    "searchLink": ".tt a, a",
+    "titleSelector": "h1.entry-title",
+    "descriptionSelector": ".entry-content.entry-content-single, .desc",
+    "chapterItems": ".eplister a",
+    "pagesSelector": "img.ts-main-image",
+    "scriptImagePattern": "\"images\"\\s*:\\s*(?<images>\\[.*?\\])"
+  },
+  {
+    "id": "evascans",
+    "name": "Eva Scans",
+    "baseUrl": "https://evascans.net",
+    "enabled": false,
+    "status": "Verified",
+    "delayMilliseconds": 1500,
+    "searchPath": "/?s={query}",
+    "searchItems": ".listupd .bs",
+    "searchLink": ".tt a, a",
+    "titleSelector": "h1.entry-title",
+    "descriptionSelector": ".entry-content.entry-content-single, .desc",
+    "chapterItems": ".eplister a",
+    "pagesSelector": "#readerarea img",
+    "scriptImagePattern": "\"images\"\\s*:\\s*(?<images>\\[.*?\\])"
+  },
+  {
+    "id": "gakamangas",
+    "name": "GakaMangas",
+    "baseUrl": "https://gakamangas.com",
+    "enabled": false,
+    "status": "Verified",
+    "delayMilliseconds": 1500,
+    "chaptersPath": "{series}/ajax/chapters/",
+    "chaptersMethod": "POST"
+  },
+  {
+    "id": "galaxydegenscans",
+    "name": "GalaxyDegenScans",
+    "baseUrl": "https://gdscans.com",
+    "enabled": false,
+    "status": "Verified",
+    "delayMilliseconds": 1500,
+    "chaptersPath": "{series}/ajax/chapters/",
+    "chaptersMethod": "POST",
+    "adult": true
+  },
+  {
+    "id": "hadesscans",
+    "name": "Hades Scans",
+    "baseUrl": "https://hadesscans.com",
+    "enabled": false,
+    "status": "Retired · Website is under maintenance.",
+    "delayMilliseconds": 1500,
+    "searchPath": "/?s={query}",
+    "searchItems": ".listupd .bs",
+    "searchLink": ".tt a, a",
+    "titleSelector": "h1.entry-title",
+    "descriptionSelector": ".entry-content.entry-content-single, .desc",
+    "chapterItems": ".eplister a",
+    "pagesSelector": "#readerarea img",
+    "scriptImagePattern": "\"images\"\\s*:\\s*(?<images>\\[.*?\\])",
+    "retired": true
+  },
+  {
+    "id": "jinmangas",
+    "name": "Jinmangas",
+    "baseUrl": "https://mangafree.info",
+    "enabled": false,
+    "status": "Verified",
+    "delayMilliseconds": 1500,
+    "chaptersPath": "{series}/ajax/chapters/",
+    "chaptersMethod": "POST"
+  },
+  {
+    "id": "kensscan",
+    "name": "Kensscan",
+    "baseUrl": "https://kensscan.com",
+    "enabled": false,
+    "status": "Verified",
+    "delayMilliseconds": 1500,
+    "chaptersPath": "{series}/ajax/chapters/",
+    "chaptersMethod": "POST",
+    "titleSelector": "h1",
+    "allowedHosts": [
+      "pub-e07f2012160844128b7abfc18e1dbf1e.r2.dev",
+      "cdn.discordapp.com"
+    ]
+  },
+  {
+    "id": "kissmangain",
+    "name": "Kissmanga.in",
+    "baseUrl": "https://kissmanga.in",
+    "enabled": false,
+    "status": "Retired · Public access blocked (HTTP 403).",
+    "delayMilliseconds": 1500,
+    "chaptersPath": "{series}/ajax/chapters/",
+    "chaptersMethod": "POST",
+    "retired": true
+  },
+  {
+    "id": "ksgroupscans",
+    "name": "KSGroupScans",
+    "baseUrl": "https://ksgroupscans.com",
+    "enabled": false,
+    "status": "Verified",
+    "delayMilliseconds": 1500,
+    "chaptersPath": "{series}/ajax/chapters/",
+    "chaptersMethod": "POST"
+  },
+  {
+    "id": "kunmangaonline",
+    "name": "Kun Manga Online",
+    "baseUrl": "https://www.kunmanga.online",
+    "enabled": false,
+    "status": "Retired · Response status code does not indicate success: 404 (Not Found).",
+    "delayMilliseconds": 1500,
+    "chaptersPath": "{series}/ajax/chapters/",
+    "chaptersMethod": "POST",
+    "retired": true
+  },
+  {
+    "id": "lagoonscans",
+    "name": "Lagoon Scans",
+    "baseUrl": "https://lagoonscans.com",
+    "enabled": false,
+    "status": "Verified",
+    "delayMilliseconds": 1500,
+    "searchPath": "/?s={query}",
+    "searchItems": ".listupd .bs",
+    "searchLink": ".tt a, a",
+    "titleSelector": "h1.entry-title",
+    "descriptionSelector": ".entry-content.entry-content-single, .desc",
+    "chapterItems": ".eplister a",
+    "pagesSelector": "#readerarea img",
+    "scriptImagePattern": "\"images\"\\s*:\\s*(?<images>\\[.*?\\])"
+  },
+  {
+    "id": "linkmanga",
+    "name": "LinkManga",
+    "baseUrl": "https://linkmanga.com",
+    "enabled": false,
+    "status": "Retired · No complete chapter download verified.",
+    "delayMilliseconds": 1500,
+    "chaptersPath": "{series}/ajax/chapters/",
+    "chaptersMethod": "POST",
+    "retired": true
+  },
+  {
+    "id": "lovesjanescans",
+    "name": "Lovesjane Scans",
+    "baseUrl": "https://lovesjane.site",
+    "enabled": false,
+    "status": "Verified",
+    "delayMilliseconds": 1500,
+    "chaptersPath": "{series}/ajax/chapters/",
+    "chaptersMethod": "POST"
+  },
+  {
+    "id": "madarascans",
+    "name": "Madara Scans",
+    "baseUrl": "https://madarascans.net",
+    "enabled": false,
+    "status": "Verified",
+    "delayMilliseconds": 1500,
+    "searchPath": "/?s={query}",
+    "searchItems": ".listupd .bs",
+    "searchLink": ".tt a, a",
+    "titleSelector": "h1.entry-title",
+    "descriptionSelector": ".entry-content.entry-content-single, .desc",
+    "chapterItems": ".eplister a",
+    "pagesSelector": "#readerarea img",
+    "scriptImagePattern": "\"images\"\\s*:\\s*(?<images>\\[.*?\\])"
+  },
+  {
+    "id": "mangahe",
+    "name": "MangaHe",
+    "baseUrl": "https://mangahe.com",
+    "enabled": false,
+    "status": "Retired · Website returned HTTP 404.",
+    "delayMilliseconds": 1500,
+    "chaptersPath": "{series}/ajax/chapters/",
+    "chaptersMethod": "POST",
+    "retired": true
+  },
+  {
+    "id": "mangamaniacs",
+    "name": "MangaManiacs",
+    "baseUrl": "https://mangamaniacs.org",
+    "enabled": false,
+    "status": "Retired · Response status code does not indicate success: 522 (<none>).",
+    "delayMilliseconds": 1500,
+    "chaptersPath": "{series}/ajax/chapters/",
+    "chaptersMethod": "POST",
+    "allowedHosts": [
+      "images.mangamaniacs.org"
+    ],
+    "retired": true
+  },
+  {
+    "id": "mangatrend",
+    "name": "Manga Trend",
+    "baseUrl": "https://mangatrend.org",
+    "enabled": false,
+    "status": "Retired · Invalid page count; source extraction failed.",
+    "delayMilliseconds": 1500,
+    "searchPath": "/?s={query}",
+    "searchItems": ".listupd .bs",
+    "searchLink": ".tt a, a",
+    "titleSelector": "h1.entry-title",
+    "descriptionSelector": ".entry-content.entry-content-single, .desc",
+    "chapterItems": ".eplister a",
+    "pagesSelector": "#readerarea img",
+    "scriptImagePattern": "\"images\"\\s*:\\s*(?<images>\\[.*?\\])",
+    "retired": true
+  },
+  {
+    "id": "manhuazonghe",
+    "name": "Manhua Zonghe",
+    "baseUrl": "https://www.manhuazonghe.com",
+    "enabled": false,
+    "status": "Retired · Public access blocked (HTTP 403).",
+    "delayMilliseconds": 1500,
+    "chaptersPath": "{series}/ajax/chapters/",
+    "chaptersMethod": "POST",
+    "retired": true
+  },
+  {
+    "id": "manhwacomics",
+    "name": "Manhwa Comics",
+    "baseUrl": "https://manhwacomics.com",
+    "enabled": false,
+    "status": "Retired · No complete chapter download verified.",
+    "delayMilliseconds": 1500,
+    "chaptersPath": "{series}/ajax/chapters/",
+    "chaptersMethod": "POST",
+    "retired": true
+  },
+  {
+    "id": "manhwamanhua",
+    "name": "ManhwaManhua",
+    "baseUrl": "https://manhwamanhua.com",
+    "enabled": false,
+    "status": "Retired · No complete chapter download verified.",
+    "delayMilliseconds": 1500,
+    "chaptersPath": "{series}/ajax/chapters/",
+    "chaptersMethod": "POST",
+    "retired": true
+  },
+  {
+    "id": "manhwatoon",
+    "name": "Manhwa Toon",
+    "baseUrl": "https://www.manhwatoon.me",
+    "enabled": false,
+    "status": "Retired · Search returned no titles.",
+    "delayMilliseconds": 1500,
+    "chaptersPath": "{series}/ajax/chapters/",
+    "chaptersMethod": "POST",
+    "retired": true
+  },
+  {
+    "id": "octopusmanga",
+    "name": "OctopusManga",
+    "baseUrl": "https://octopusmanga.com",
+    "enabled": false,
+    "status": "Verified",
+    "delayMilliseconds": 1500,
+    "chaptersPath": "{series}/ajax/chapters/",
+    "chaptersMethod": "POST",
+    "pagesSelector": "img.wp-manga-chapter-img",
+    "adult": true
+  },
+  {
+    "id": "ragescans",
+    "name": "Rage Scans",
+    "baseUrl": "https://ragescans.com",
+    "enabled": false,
+    "status": "Retired · Public access blocked (HTTP 403).",
+    "delayMilliseconds": 1500,
+    "searchPath": "/?s={query}",
+    "searchItems": ".listupd .bs",
+    "searchLink": ".tt a, a",
+    "titleSelector": "h1.entry-title",
+    "descriptionSelector": ".entry-content.entry-content-single, .desc",
+    "chapterItems": ".eplister a",
+    "pagesSelector": "#readerarea img",
+    "scriptImagePattern": "\"images\"\\s*:\\s*(?<images>\\[.*?\\])",
+    "retired": true
+  },
+  {
+    "id": "ravenscans",
+    "name": "Raven Scans",
+    "baseUrl": "https://ravenscans.org",
+    "enabled": false,
+    "status": "Retired · Public access blocked (HTTP 403).",
+    "delayMilliseconds": 1500,
+    "searchPath": "/?s={query}",
+    "searchItems": ".listupd .bs",
+    "searchLink": ".tt a, a",
+    "titleSelector": "h1.entry-title",
+    "descriptionSelector": ".entry-content.entry-content-single, .desc",
+    "chapterItems": ".eplister a",
+    "pagesSelector": "#readerarea img",
+    "scriptImagePattern": "\"images\"\\s*:\\s*(?<images>\\[.*?\\])",
+    "retired": true
+  },
+  {
+    "id": "rosesquadscans",
+    "name": "Rose Squad Scans",
+    "baseUrl": "https://rosesquadscans.aishiteru.org",
+    "enabled": false,
+    "status": "Retired · Public access requires login.",
+    "delayMilliseconds": 1500,
+    "chaptersPath": "{series}/ajax/chapters/",
+    "chaptersMethod": "POST",
+    "retired": true
+  },
+  {
+    "id": "s2manga",
+    "name": "S2Manga",
+    "baseUrl": "https://s2read.com",
+    "enabled": false,
+    "status": "Verified",
+    "delayMilliseconds": 1500,
+    "chaptersPath": "{series}/ajax/chapters/",
+    "chaptersMethod": "POST",
+    "allowedHosts": [
+      "cdn-1.s2read.com"
+    ],
+    "adult": true
+  },
+  {
+    "id": "setsuscans",
+    "name": "Setsu Scans",
+    "baseUrl": "https://setsuscans.com",
+    "enabled": false,
+    "status": "Retired · Public access blocked (HTTP 403).",
+    "delayMilliseconds": 1500,
+    "chaptersPath": "{series}/ajax/chapters/",
+    "chaptersMethod": "POST",
+    "retired": true
+  },
+  {
+    "id": "lhtranslation",
+    "name": "LHTranslation",
+    "baseUrl": "https://lhtranslation.net",
+    "enabled": false,
+    "status": "Verified",
+    "pagesPath": "{chapter}?style=list",
+    "pagesSelector": "img.wp-manga-chapter-img",
+    "chaptersMethod": "POST",
+    "chaptersPath": "{series}/ajax/chapters/"
+  },
+  {
+    "id": "mangaparktv",
+    "name": "MangaPark.tv",
+    "baseUrl": "https://mangapark.tv",
+    "enabled": false,
+    "status": "Verified",
+    "pagesPath": "{chapter}?style=list",
+    "pagesSelector": "img.wp-manga-chapter-img",
+    "chaptersMethod": "POST",
+    "chaptersPath": "{series}/ajax/chapters/"
+  },
+  {
+    "id": "manhwareads",
+    "name": "ManhwaReads",
+    "baseUrl": "https://manhwareads.com",
+    "enabled": false,
+    "status": "Verified",
+    "pagesPath": "{chapter}?style=list",
+    "pagesSelector": "img.wp-manga-chapter-img",
+    "chaptersMethod": "POST",
+    "chaptersPath": "{series}/ajax/chapters/"
+  },
+  {
+    "id": "rubycomics",
+    "name": "Ruby Comics",
+    "baseUrl": "https://rubycomics.net",
+    "enabled": false,
+    "status": "Verified",
+    "pagesPath": "{chapter}?style=list",
+    "pagesSelector": "img.wp-manga-chapter-img",
+    "chaptersMethod": "POST",
+    "chaptersPath": "{series}/ajax/chapters/",
+    "adult": true
+  },
+  {
+    "id": "yakshacomics",
+    "name": "Yaksha Comics",
+    "baseUrl": "https://yakshacomics.com",
+    "enabled": false,
+    "status": "Verified",
+    "pagesPath": "{chapter}?style=list",
+    "pagesSelector": "img.wp-manga-chapter-img",
+    "chaptersMethod": "POST",
+    "chaptersPath": "{series}/ajax/chapters/"
+  }
+]
