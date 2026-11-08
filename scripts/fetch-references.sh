@@ -5,6 +5,6 @@ image="${JELLYFIN_IMAGE:-jellyfin/jellyfin@sha256:2038fe038ab3876a80f6e7b7e0aef6
 mkdir -p .jellyfin
 container=$(docker create "$image")
 trap 'docker rm "$container" >/dev/null' EXIT
-for assembly in MediaBrowser.Common MediaBrowser.Controller MediaBrowser.Model Jellyfin.Data Jellyfin.Database.Implementations Jellyfin.Extensions Emby.Naming; do
+for assembly in MediaBrowser.Common MediaBrowser.Controller MediaBrowser.Model Jellyfin.Data Jellyfin.Database.Implementations Jellyfin.Extensions Emby.Naming Microsoft.Data.Sqlite Newtonsoft.Json; do
   docker cp "$container:/jellyfin/$assembly.dll" ".jellyfin/$assembly.dll"
 done
