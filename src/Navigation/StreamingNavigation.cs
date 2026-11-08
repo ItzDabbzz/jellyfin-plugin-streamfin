@@ -68,7 +68,7 @@ public sealed class StreamingNavigation(ILibraryManager library, IChannelManager
         "Hub" => "Hub", "Both" => "Both", _ => "Channels"
     };
     public Guid HubId => library.GetNewItemId("Channel " + HubChannel.ChannelName, typeof(Channel));
-    public bool IsPlaceholder(Guid id) => library.GetItemById(id) is { } item && item.ChannelId == HubId && item.Id != HubId;
+    public bool IsPlaceholder(Guid id) => id != Guid.Empty && library.GetItemById(id) is { } item && item.ChannelId == HubId && item.Id != HubId;
     public bool HideLegacyRoot(Guid id) => Mode == "Hub" && new[] { "Anime", FilmChannel.ChannelName, MusicChannel.ChannelName }
         .Any(name => id == library.GetNewItemId("Channel " + name, typeof(Channel)));
 

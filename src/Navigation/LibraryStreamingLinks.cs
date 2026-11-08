@@ -48,7 +48,7 @@ public sealed class LibraryStreamingLinks(ILibraryManager library, StreamingNavi
         foreach (var key in new[] { "excludeItemTypes", "mediaTypes", "filters", "genres", "genreIds",
             "years", "person", "personIds", "studioIds", "tags", "isPlayed", "isFavorite", "ids", "hasSubtitles", "isMissing", "minCommunityRating" })
             if (!string.IsNullOrWhiteSpace(Arg(key)?.ToString())) return;
-        if (!Guid.TryParse(Arg("parentId")?.ToString(), out var parentId)
+        if (!Guid.TryParse(Arg("parentId")?.ToString(), out var parentId) || parentId == Guid.Empty
             || library.GetItemById(parentId) is not CollectionFolder folder || !folder.IsVisible(user)) return;
         var mapping = (Plugin.Instance?.Configuration.StreamingLibraryLinks ?? []).FirstOrDefault(link =>
             Guid.TryParse(link.LibraryId, out var id) && id == parentId);

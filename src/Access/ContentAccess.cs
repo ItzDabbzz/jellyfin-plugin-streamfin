@@ -10,7 +10,7 @@ public sealed class ContentAccess(ILibraryManager library, AniListCatalog catalo
     public Guid FilmChannelId => library.GetNewItemId("Channel " + FilmChannel.ChannelName, typeof(MediaBrowser.Controller.Channels.Channel));
     public Guid MusicChannelId => library.GetNewItemId("Channel " + MusicChannel.ChannelName, typeof(MediaBrowser.Controller.Channels.Channel));
     public Guid HubChannelId => library.GetNewItemId("Channel " + HubChannel.ChannelName, typeof(MediaBrowser.Controller.Channels.Channel));
-    public bool IsOurs(Guid id) => IsChannel(id) || library.GetItemById(id)?.ChannelId is { } channel && IsChannel(channel);
+    public bool IsOurs(Guid id) => id != Guid.Empty && (IsChannel(id) || library.GetItemById(id)?.ChannelId is { } channel && IsChannel(channel));
     public bool IsChannel(Guid id) => id == ChannelId || id == FilmChannelId || id == MusicChannelId || id == HubChannelId;
 
     private static int? AnimeId(BaseItem item)
@@ -20,12 +20,14 @@ public sealed class ContentAccess(ILibraryManager library, AniListCatalog catalo
     }
 
     public Task PrefetchAsync(IEnumerable<Guid> ids, CancellationToken ct) => catalog.PrefetchAsync(ids
+        .Where(id => id != Guid.Empty)
         .Select(library.GetItemById).OfType<BaseItem>().Where(item => item.ChannelId == ChannelId)
         .Select(AnimeId).OfType<int>().Where(id => !decisions.ContainsKey(id)), ct);
 
     // cachedOnly answers from what is already cached without asking AniList; unknown titles are denied.
     public async Task<bool> AllowsAsync(Guid id, CancellationToken ct, bool cachedOnly = false)
     {
+        if (id == Guid.Empty) return false;
         var item = library.GetItemById(id);
         if (id == HubChannelId || item?.ChannelId == HubChannelId) return HubChannel.Enabled;
         if (item?.ChannelId == FilmChannelId) return FilmChannel.IsAvailable;

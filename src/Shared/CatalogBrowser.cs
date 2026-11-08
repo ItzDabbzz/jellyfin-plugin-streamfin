@@ -23,6 +23,7 @@ public sealed class CatalogBrowser(AniListCatalog anime, TmdbCatalog films, ILib
     {
         var parts = folder.ExternalId?.Split('/');
         if (!IsCatalog(folder.ExternalId) || parts is null || !int.TryParse(parts[2], out var legacyPage) || legacyPage < 1) return null;
+        if (folder.ChannelId == Guid.Empty) return null;
         var channel = library.GetItemById(folder.ChannelId) as Channel;
         if (channel is null || (parts[0] == "catalog" ? channel.Name != "Anime" : channel.Name != FilmChannel.ChannelName)) return null;
         var upstreamSize = parts[0] == "catalog" ? 30 : 20;

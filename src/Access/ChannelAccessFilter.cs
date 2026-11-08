@@ -79,7 +79,8 @@ public sealed class ChannelAccessFilter(ILibraryManager library, IAuthorizationC
                 if (parentId == Guid.Empty)
                     parentId = context.HttpContext.Request.Query.Where(p => p.Key.Equals("parentId", StringComparison.OrdinalIgnoreCase)
                         || p.Key.Equals("folderId", StringComparison.OrdinalIgnoreCase)).SelectMany(p => Identifiers(p.Value.ToString())).FirstOrDefault();
-                if (library.GetItemById(parentId) is Folder parent && IsOurs(parentId) && CatalogBrowser.IsCatalog(parent.ExternalId))
+                // A plain /Items search has no parent; asking the library for an empty ID throws.
+                if (parentId != Guid.Empty && library.GetItemById(parentId) is Folder parent && IsOurs(parentId) && CatalogBrowser.IsCatalog(parent.ExternalId))
                 {
                     var auth = await authorization.GetAuthorizationInfo(context.HttpContext);
                     var start = int.TryParse(context.HttpContext.Request.Query["StartIndex"], out var offset) ? offset : 0;
@@ -124,14 +125,14 @@ public sealed class ChannelAccessFilter(ILibraryManager library, IAuthorizationC
                 var recursive = episodeQuery || string.Equals(context.HttpContext.Request.Query["Recursive"], "true", StringComparison.OrdinalIgnoreCase);
                 var targets = context.ActionArguments.TryGetValue("seasonId", out var requestedSeason) && requestedSeason is Guid seasonId && IsOurs(seasonId)
                     ? [seasonId] : ids;
-                if (context.ActionArguments.TryGetValue("startItemId", out var startItem) && startItem is Guid startId
+                if (context.ActionArguments.TryGetValue("startItemId", out var startItem) && startItem is Guid startId && startId != Guid.Empty
                     && library.GetItemById(startId) is Episode resume && resume.ChannelId == content.ChannelId
                     && context.ActionArguments.ContainsKey("seasonId"))
                 {
                     context.ActionArguments["seasonId"] = resume.ParentId;
                     targets = [resume.ParentId];
                 }
-                foreach (var id in targets)
+                foreach (var id in targets.Where(id => id != Guid.Empty))
                 {
                     var item = library.GetItemById(id);
                     if (item is not Folder root || (!IsOurChannel(item.ChannelId) && !IsOurChannel(item.Id))) continue;
