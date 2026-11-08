@@ -3,10 +3,10 @@ namespace StreamFin;
 public sealed record SourceMatches(string Id, string Name, IReadOnlyList<SourceTitle> Titles, string? Error = null);
 public sealed record AnimePlayback(string SourceKey, IReadOnlyList<ResolvedVideo> Videos);
 
-public sealed class SourceRegistry(IEnumerable<IAnimeSource> providers) : IDisposable
+public sealed class SourceRegistry(IEnumerable<IAnimeSource> providers, CatalogCache store)
 {
-    private readonly BrowseCache<SourceMatches> matches = new(value => value.Error is null && value.Titles.Count > 0);
-    private readonly BrowseCache<IReadOnlyList<SourceEpisode>> episodes = new(value => value.Count > 0);
+    private readonly BrowseCache<SourceMatches> matches = new(store, "sources", value => value.Error is null && value.Titles.Count > 0);
+    private readonly BrowseCache<IReadOnlyList<SourceEpisode>> episodes = new(store, "sources", value => value.Count > 0);
     private static string MetadataKey(Anime anime) => (Plugin.Instance?.Configuration.CacheRevision ?? 0)
         + "/" + System.Text.Json.JsonSerializer.Serialize(anime);
     private Task<SourceMatches> MatchCachedAsync(IAnimeSource source, Anime anime, CancellationToken ct) =>
@@ -99,8 +99,6 @@ public sealed class SourceRegistry(IEnumerable<IAnimeSource> providers) : IDispo
 
     public async Task<IReadOnlyList<SourceMatches>> SearchAsync(Anime anime, CancellationToken ct)
         => await Task.WhenAll(ordered.Where(p => IsEnabled(p.Id)).Select(p => MatchCachedAsync(p, anime, ct)));
-
-    public void Dispose() { matches.Dispose(); episodes.Dispose(); }
 
     public static async Task<SourceMatches> MatchAsync(IAnimeSource source, Anime anime, CancellationToken ct)
     {

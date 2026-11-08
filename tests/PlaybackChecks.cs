@@ -10,7 +10,7 @@ internal static class PlaybackChecks
         var calls = new List<string>();
         var unavailable = new TestSource("zoko", calls, fail: true);
         var working = new TestSource("animegg", calls);
-        var registry = new SourceRegistry([unavailable, working]);
+        var registry = new SourceRegistry([unavailable, working], new CatalogCache());
         var result = await registry.ResolveWithFallbackAsync(anime, 2, "zoko:10-2", default, config);
         Check(result.SourceKey == "episode-2" && result.Videos.Count == 1
             && calls.SequenceEqual(["zoko:resolve", "animegg:search", "animegg:episodes", "animegg:resolve"]),
@@ -31,7 +31,7 @@ internal static class PlaybackChecks
         Check(calls.SequenceEqual(["zoko:resolve"]), "disabled provider receives no requests");
 
         calls.Clear();
-        var ambiguous = new SourceRegistry([unavailable, new TestSource("animegg", calls, ambiguous: true)]);
+        var ambiguous = new SourceRegistry([unavailable, new TestSource("animegg", calls, ambiguous: true)], new CatalogCache());
         await RejectAsync(() => ambiguous.ResolveWithFallbackAsync(anime, 2, "zoko:10-2", default, config), "ambiguous title matches are not guessed");
         Check(!calls.Contains("animegg:resolve"), "ambiguous matches never start playback");
 
@@ -46,7 +46,7 @@ internal static class PlaybackChecks
         catch (OperationCanceledException) { Check(calls.Count == 0, "cancelled playback does not call providers"); }
 
         calls.Clear();
-        var wrongEpisode = new SourceRegistry([unavailable, new TestSource("animegg", calls, number: 3)]);
+        var wrongEpisode = new SourceRegistry([unavailable, new TestSource("animegg", calls, number: 3)], new CatalogCache());
         await RejectAsync(() => wrongEpisode.ResolveWithFallbackAsync(anime, 2, "zoko:10-2", default, config), "fallback requires the exact episode number");
         Check(!calls.Contains("animegg:resolve"), "wrong episode is never resolved");
     }

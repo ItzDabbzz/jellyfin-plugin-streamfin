@@ -11,10 +11,10 @@ public sealed record FilmPage(IReadOnlyList<Film> Items, bool HasNext, int Total
 public sealed record FilmSeason(int Number, string Name, int Episodes, string? Image);
 public sealed record FilmEpisode(int Season, int Number, string Name, string Overview, string? Image, int? Runtime, DateTime? Aired);
 
-public sealed class TmdbCatalog(SafeHttp http) : IDisposable
+public sealed class TmdbCatalog(SafeHttp http, CatalogCache store)
 {
-    private readonly MemoryCache cache = new(new MemoryCacheOptions { SizeLimit = 4000 });
-    private readonly BrowseCache<object> browsing = new(value => value switch
+    private readonly MemoryCache cache = store.Collection("films-details");
+    private readonly BrowseCache<object> browsing = new(store, "films", value => value switch
         { FilmPage page => page.Items.Count > 0, System.Collections.ICollection items => items.Count > 0, _ => true });
     private readonly RateWindow budget = new(40, TimeSpan.FromSeconds(10));
     private static readonly Uri Endpoint = new("https://api.themoviedb.org/3/");
@@ -132,5 +132,4 @@ public sealed class TmdbCatalog(SafeHttp http) : IDisposable
         return new Film(id, k, title, year, Text(node, "overview") ?? "", Image(node, "poster_path"), runtime,
             node.TryGetProperty("adult", out var adult) && adult.ValueKind == JsonValueKind.True);
     }
-    public void Dispose() { browsing.Dispose(); cache.Dispose(); }
 }

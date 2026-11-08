@@ -8,11 +8,11 @@ namespace StreamFin;
 // AniList allows 90 requests a minute and drops to 30 when degraded. A single listing can
 // ask about dozens of titles, so every query passes one shared budget, identical queries
 // share one request, and a recent copy is served when the budget or AniList runs out.
-public sealed class AniListCatalog(SafeHttp http, ILogger<AniListCatalog> logger) : IDisposable
+public sealed class AniListCatalog(SafeHttp http, CatalogCache store, ILogger<AniListCatalog> logger)
 {
-    private readonly MemoryCache cache = new(new MemoryCacheOptions { SizeLimit = 4000 });
-    private readonly BrowseCache<CatalogPage> browsing = new(page => page.Items.Count > 0);
-    private readonly BrowseCache<Anime> titles = new(_ => true);
+    private readonly MemoryCache cache = store.Collection("anime");
+    private readonly BrowseCache<CatalogPage> browsing = new(store, "anime", page => page.Items.Count > 0);
+    private readonly BrowseCache<Anime> titles = new(store, "anime", _ => true);
     private readonly ConcurrentDictionary<string, Lazy<Task<string>>> inflight = new();
     private readonly RateWindow budget = new(25, TimeSpan.FromMinutes(1));
     // Typing a search fires a query per pause. Searches get part of the budget and never wait,
@@ -174,7 +174,6 @@ public sealed class AniListCatalog(SafeHttp http, ILogger<AniListCatalog> logger
             Number(node, "duration"), node.GetProperty("isAdult").GetBoolean(), node.GetProperty("genres").EnumerateArray().Select(g => g.GetString()!).ToArray(),
             Number(node, "idMal"), available);
     }
-    public void Dispose() { browsing.Dispose(); titles.Dispose(); cache.Dispose(); }
 }
 
 // A sliding window of request slots. Reserve hands out the next free slot and reports how

@@ -11,7 +11,7 @@ public sealed record SimilarArtist(string Name, double Score);
 // Radio from an artist: listeners' habits say which artists go together (ListenBrainz, or Last.fm with a key), and
 // the catalog supplies those artists' top tracks. ListenBrainz knows artists by MusicBrainz ID; the exact one comes
 // from the ISRC of a top track, with a name search as the fallback. Every answer is kept for days.
-public sealed class MusicRadio(SafeHttp http, MusicCatalog catalog) : IDisposable
+public sealed class MusicRadio(SafeHttp http, MusicCatalog catalog, CatalogCache store) : IDisposable
 {
     public const string MusicBrainzHost = "musicbrainz.org";
     public const string ListenBrainzHost = "labs.api.listenbrainz.org";
@@ -23,8 +23,8 @@ public sealed class MusicRadio(SafeHttp http, MusicCatalog catalog) : IDisposabl
     // Building a radio may wait this long for the catalog budget to have room, and no longer.
     private static readonly TimeSpan Patience = TimeSpan.FromSeconds(12);
     private static readonly TimeSpan Days = TimeSpan.FromDays(3);
-    private readonly MemoryCache cache = new(new MemoryCacheOptions { SizeLimit = 5000 });
-    private readonly BrowseCache<IReadOnlyList<MusicTrack>> mixes = new(value => value.Count > 0);
+    private readonly MemoryCache cache = store.Collection("radio");
+    private readonly BrowseCache<IReadOnlyList<MusicTrack>> mixes = new(store, "radio", value => value.Count > 0);
     private readonly SemaphoreSlim brainz = new(1, 1);
     private DateTime lastBrainz;
 
@@ -260,8 +260,6 @@ public sealed class MusicRadio(SafeHttp http, MusicCatalog catalog) : IDisposabl
 
     public void Dispose()
     {
-        cache.Dispose();
-        mixes.Dispose();
         brainz.Dispose();
     }
 }

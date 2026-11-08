@@ -16,13 +16,13 @@ public sealed record MusicResults(IReadOnlyList<MusicTrack> Tracks, IReadOnlyLis
 
 // Lossless catalog: Monochrome's tracks API. Search and release JSON, and GET /track/<id> answers
 // with the FLAC itself (16/44.1, some masters 24 bit; byte ranges, immutable), so a stream needs no resolving step.
-public sealed class MusicCatalog(SafeHttp http, MusicMetadataStore? disk = null, ILogger<MusicCatalog>? logger = null, MonochromeHealth? health = null) : IDisposable
+public sealed class MusicCatalog(SafeHttp http, CatalogCache store, MusicMetadataStore? disk = null, ILogger<MusicCatalog>? logger = null, MonochromeHealth? health = null) : IDisposable
 {
     public const string DefaultApi = "https://tracks.monochrome.st/";
-    private readonly MemoryCache cache = new(new MemoryCacheOptions { SizeLimit = 8000 });
+    private readonly MemoryCache cache = store.Collection("music");
     // Songs the catalog has described in any answer (search hits, top tracks, album tracks), by id. A queue or a
     // scrobble of a song from a search then needs no lookup of its whole album.
-    private readonly MemoryCache tracks = new(new MemoryCacheOptions { SizeLimit = 20_000 });
+    private readonly MemoryCache tracks = store.Collection("music-tracks");
     private readonly System.Collections.Concurrent.ConcurrentDictionary<string, Task<object>> loading = new();
     private readonly Origin mono = new(20, TimeSpan.FromSeconds(10), (health ?? new MonochromeHealth(probed: false)).Breaker);
     private readonly Origin deezer = new(40, TimeSpan.FromSeconds(5), new CatalogBreaker { Name = "Deezer catalog", Logger = logger });
@@ -158,7 +158,7 @@ public sealed class MusicCatalog(SafeHttp http, MusicMetadataStore? disk = null,
 
     // The catalog's copy of a song found through Deezer, which has no audio of its own: same ISRC, or the same
     // title, artist and length. Answers, found or not, are kept a while, so an album's songs ask once each.
-    private readonly MemoryCache twins = new(new MemoryCacheOptions { SizeLimit = 20_000 });
+    private readonly MemoryCache twins = store.Collection("music-twins");
 
     public string? KnownTwin(string trackId) => IsMonochrome(trackId) ? trackId : twins.TryGetValue<string>(trackId, out var twin) && twin!.Length > 0 ? twin : null;
 
@@ -480,9 +480,6 @@ public sealed class MusicCatalog(SafeHttp http, MusicMetadataStore? disk = null,
 
     public void Dispose()
     {
-        cache.Dispose();
-        tracks.Dispose();
-        twins.Dispose();
         mono.Dispose();
         deezer.Dispose();
         refreshes.Dispose();

@@ -12,12 +12,12 @@ public sealed record FlixServer(string Name, Uri Link);
 // Movies and TV from the two FlixHQ layouts, ported from my flixdl downloader. Each site lists
 // third-party players; the player page is read as text, packed scripts are unpacked as a pure
 // string transform, and nothing from the page is ever executed.
-public sealed class FlixSource(SafeHttp http) : IDisposable
+public sealed class FlixSource(SafeHttp http, CatalogCache store)
 {
     public static readonly Uri Watch = new("https://flixhqz.net/");
     public static readonly Uri Classic = new("https://flixhq.ws/");
     public static readonly string[] ServerOrder = ["vidmoly", "doodstream", "vidsrc"];
-    private readonly BrowseCache<Uri?> pages = new(value => value is not null);
+    private readonly BrowseCache<Uri?> pages = new(store, "films", value => value is not null);
     private static Regex Rx(string pattern) => new(pattern, RegexOptions.IgnoreCase | RegexOptions.Singleline, TimeSpan.FromSeconds(2));
     private static readonly Regex AnchorTag = Rx(@"<a\b([^>]*)>(.*?)</a>");
     private static readonly Regex M3u8 = Rx(@"https?://[^\s""'<>\\]+?\.m3u8(?:\?[^\s""'<>\\]*)?");
@@ -295,5 +295,4 @@ public sealed class FlixSource(SafeHttp http) : IDisposable
         }
         return value;
     }
-    public void Dispose() => pages.Dispose();
 }

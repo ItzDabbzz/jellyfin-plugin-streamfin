@@ -9,12 +9,12 @@ namespace StreamFin;
 
 // Lyrics from LRCLIB, the open database Monochrome's own player reads. Jellyfin only reads lyric files
 // stored beside local media, so ChannelAccessFilter answers the lyrics route for music channel tracks.
-public sealed class MusicLyrics(SafeHttp http, MusicCatalog catalog) : IDisposable
+public sealed class MusicLyrics(SafeHttp http, MusicCatalog catalog, CatalogCache store)
 {
     public const string Host = "lrclib.net";
     private const int LineLimit = 2000;
-    private readonly MemoryCache cache = new(new MemoryCacheOptions { SizeLimit = 2000 });
-    private readonly BrowseCache<LyricDto?> requests = new(value => value is not null);
+    private readonly MemoryCache cache = store.Collection("lyrics");
+    private readonly BrowseCache<LyricDto?> requests = new(store, "lyrics", value => value is not null);
     private readonly RateWindow budget = new(10, TimeSpan.FromSeconds(10));
 
     public async Task<LyricDto?> ForItemAsync(Audio audio, CancellationToken ct)
@@ -143,5 +143,4 @@ public sealed class MusicLyrics(SafeHttp http, MusicCatalog catalog) : IDisposab
         return plain.Length > 500 ? plain[..500] : plain;
     }
 
-    public void Dispose() { requests.Dispose(); cache.Dispose(); }
 }

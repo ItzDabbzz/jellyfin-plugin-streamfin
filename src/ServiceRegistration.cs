@@ -14,6 +14,8 @@ public sealed class ServiceRegistration : IPluginServiceRegistrator
     {
         services.AddHttpContextAccessor();
         services.AddSingleton<SafeHttp>();
+        // One bounded store behind every catalog cache, so the settings page can report and clear all of them.
+        services.AddSingleton<CatalogCache>();
         services.AddSingleton<AniListCatalog>();
         services.AddSingleton<TmdbCatalog>();
         services.AddSingleton<FlixSource>();

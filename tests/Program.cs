@@ -719,7 +719,7 @@ try
     await meta.WriteAsync("settings", "155102851176075264", "x");
     Check(meta.Read("release", "../../etc/passwd") is null && !meta.Has("settings", "155102851176075264")
         && Directory.EnumerateFiles(metaRoot, "*", SearchOption.AllDirectories).Count() == 1, "stored metadata is named by kind and validated id only");
-    using (var offline = new MusicCatalog(new SafeHttp(), meta))
+    using (var offline = new MusicCatalog(new SafeHttp(), new CatalogCache(), meta))
     {
         var stored = await offline.ReleaseAsync("155102851176075264", default);
         Check(stored.Title == "Stored" && stored.Tracks.Single().Title == "Kept" && offline.HasRelease("155102851176075264"),
@@ -729,11 +729,11 @@ try
     const string deezerStored = """{"album":{"id":302127,"title":"From Deezer"},"tracks":{"data":[{"id":3135553,"title":"One More Time","duration":320}]}}""";
     await meta.WriteAsync("release", "dz302127", deezerStored);
     Check(File.Exists(Path.Combine(metaRoot, Deezer.Host, "release", "dz302127.json")), "Deezer answers are kept apart from the catalog's");
-    using (var offline = new MusicCatalog(new SafeHttp(), meta))
+    using (var offline = new MusicCatalog(new SafeHttp(), new CatalogCache(), meta))
         Check((await offline.ReleaseAsync("dz302127", default)).Tracks.Single().Id == "dz3135553" && offline.HasRelease("dz302127"), "a stored Deezer album answers through Deezer's parser");
     Directory.CreateDirectory(Path.Combine(metaRoot, MusicCatalog.ApiHost, "release"));
     File.WriteAllText(Path.Combine(metaRoot, MusicCatalog.ApiHost, "release", "155102851176075265.json"), "{not json");
-    using (var damaged = new MusicCatalog(new SafeHttp(), meta))
+    using (var damaged = new MusicCatalog(new SafeHttp(), new CatalogCache(), meta))
     {
         try { await damaged.ReleaseAsync("155102851176075265", new CancellationTokenSource(TimeSpan.FromMilliseconds(1)).Token); }
         catch (Exception ex) when (ex is ProviderException or OperationCanceledException) { }
@@ -855,7 +855,7 @@ if (args.Contains("--provider-live"))
     Check(response.StatusCode == HttpStatusCode.PartialContent && response.Content.Headers.ContentType?.MediaType == "video/mp4", "live AnimeHeaven range request through SafeHttp");
     var bytes = await response.Content.ReadAsByteArrayAsync(timeout.Token);
     Check(bytes.Length == 1024, "live AnimeHeaven bounded video read");
-    using var music = new MusicCatalog(http);
+    using var music = new MusicCatalog(http, new CatalogCache());
     var found = await music.SearchAsync("daft punk one more time", default);
     var hit = found.Tracks.First(t => t.Title == "One More Time");
     var album = await music.ReleaseAsync(hit.ReleaseId, default);
@@ -865,7 +865,7 @@ if (args.Contains("--provider-live"))
     using var flac = await http.OpenAsync(MusicCatalog.StreamUri(hit.Id), true, flacTimeout.Token, range: "bytes=0-65535");
     var head = await flac.Content.ReadAsByteArrayAsync(flacTimeout.Token);
     Check(flac.StatusCode == HttpStatusCode.PartialContent && head.Length == 65536 && head[..4].SequenceEqual("fLaC"u8.ToArray()), "live music stream is FLAC with byte ranges");
-    using var radio = new MusicRadio(http, music);
+    using var radio = new MusicRadio(http, music, new CatalogCache());
     var daft = await music.ArtistAsync(hit.Artists[0].Id, default);
     Check(await radio.MbidAsync(daft, default) == "056e4f3e-d505-4dad-8ec1-d04f521cbb56", "live MusicBrainz ID from an ISRC");
     var mix = await radio.RadioAsync(daft.Id, 30, default);
@@ -902,7 +902,7 @@ if (args.Contains("--hls-live"))
     }
     var zokoLive = await new HiAnimeSource(http).ResolveAsync("52991-1", default);
     Check(await FirstSegmentAsync(zokoLive[0], "HiAnime Frieren 1") == 0x47 && zokoLive[0].Subtitles![0].Language == "en", "live HiAnime playlist, segment and English subtitles");
-    using var flix = new FlixSource(http);
+    var flix = new FlixSource(http, new CatalogCache());
     var obesity = new Film(1290938, FilmKind.Movie, "South Park: The End of Obesity", 2024, "", null, null, false);
     var movieLive = await flix.ResolveAsync(obesity, null, null, default);
     Check(!movieLive[0].Hls || await FirstSegmentAsync(movieLive[0], "FlixHQ movie") >= 0, "live FlixHQ movie resolves");

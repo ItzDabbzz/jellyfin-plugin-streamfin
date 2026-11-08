@@ -71,4 +71,13 @@ public sealed class Plugin : BasePlugin<Configuration>, IHasWebPages
     public static string[] Ordered(string[]? saved, params string[] known) => (saved ?? []).Where(s => known.Contains(s)).Concat(known).Distinct().ToArray();
     public static bool Allows(Guid id) => id != Guid.Empty && Instance?.Configuration is { Enabled: true } c
         && c.AllowedUserIds.Any(value => Guid.TryParse(value, out var allowed) && allowed == id);
+
+    // Rotates the key Jellyfin and the plugin both use for channel content, so the next browse fetches fresh items.
+    public static void InvalidateChannels()
+    {
+        if (Instance is not { } plugin) return;
+        var configuration = plugin.Configuration;
+        configuration.CacheRevision++;
+        plugin.UpdateConfiguration(configuration);
+    }
 }

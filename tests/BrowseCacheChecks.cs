@@ -10,7 +10,8 @@ internal static class BrowseCacheChecks
             Console.WriteLine("PASS: " + name);
         }
         var now = DateTimeOffset.UtcNow;
-        using var cache = new BrowseCache<string>(value => value.Length > 0, () => now);
+        using var store = new CatalogCache();
+        var cache = new BrowseCache<string>(store, "test", value => value.Length > 0, () => now);
         var lifetime = TimeSpan.FromMinutes(30);
         var calls = 0;
         var completion = new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -54,7 +55,7 @@ internal static class BrowseCacheChecks
             catch (HttpRequestException) { }
         }
         Check(failures == 2, "cold request failures release shared requests and allow a retry");
-        using var pages = new BrowseCache<FilmPage>(page => page.Items.Count > 0);
+        var pages = new BrowseCache<FilmPage>(store, "test", page => page.Items.Count > 0);
         var movie = new Film(1, FilmKind.Movie, "Example", 2026, "", null, 90, false);
         var pageCalls = 0;
         Task<FilmPage> Page(CancellationToken _) { pageCalls++; return Task.FromResult(new FilmPage([movie], true, 100)); }
