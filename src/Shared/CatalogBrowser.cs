@@ -1,3 +1,4 @@
+using Jellyfin.Data.Enums;
 using Jellyfin.Database.Implementations.Entities;
 using MediaBrowser.Controller.Channels;
 using MediaBrowser.Controller.Dto;
@@ -13,11 +14,43 @@ namespace StreamFin;
 
 // ChannelManager pages its local database, not the provider's catalog. Handle catalog
 // requests before that step so every category has the same native offset/limit contract.
-public sealed class CatalogBrowser(AniListCatalog anime, TmdbCatalog films, ILibraryManager library, IDtoService dtos)
+public sealed class CatalogBrowser(AniListCatalog anime, TmdbCatalog films, OnlineSearch animeSearch, FilmSearch filmSearch, ILibraryManager library, IDtoService dtos)
 {
     public static bool IsBrowseAction(string? action) => action is "GetItems" or "GetItemsByUserIdLegacy" or "GetChannelItems";
     public static bool IsCatalog(string? id) => id?.Split('/') is ["catalog", "popular" or "season" or "az", _]
         or ["list", "movies" or "tv" or "trending", _];
+
+    // A Videos row excludes Movie and a Programs row includes only LiveTvProgram; neither may receive our titles.
+    public static BaseItemKind[] Kinds(bool isAnime, BaseItemKind[] include, BaseItemKind[] exclude)
+    {
+        BaseItemKind[] requested = include.Length > 0 ? include : exclude.Length == 0 ? [BaseItemKind.Movie, BaseItemKind.Series] : [];
+        return requested.Where(kind => (isAnime ? kind == BaseItemKind.Series : kind is BaseItemKind.Movie or BaseItemKind.Series)
+            && !exclude.Contains(kind)).ToArray();
+    }
+
+    // A search started from a catalog page keeps that page's parent, so Jellyfin's local /Items query would
+    // otherwise list the whole catalog. Ask the matching provider instead and return its titles directly.
+    public async Task<QueryResult<BaseItemDto>> SearchAsync(Folder folder, User user, string term, BaseItemKind[] include, BaseItemKind[] exclude, MediaType[] media, int start, int? limit, DtoOptions options, CancellationToken ct)
+    {
+        var parts = folder.ExternalId?.Split('/');
+        if (!IsCatalog(folder.ExternalId) || parts is null || folder.ChannelId == Guid.Empty) return new QueryResult<BaseItemDto>(start, 0, []);
+        if (media.Length > 0 && !media.Contains(MediaType.Video)) return new QueryResult<BaseItemDto>(start, 0, []);
+        var isAnime = parts[0] == "catalog";
+        var kinds = Kinds(isAnime, include, exclude);
+        if (kinds.Length == 0) return new QueryResult<BaseItemDto>(start, 0, []);
+        var query = new SearchProviderQuery
+        {
+            SearchTerm = term, UserId = user.Id, IncludeItemTypes = kinds, ExcludeItemTypes = exclude, MediaTypes = media, Limit = 30
+        };
+        var found = isAnime ? await animeSearch.SearchAsync(query, ct) : await filmSearch.SearchAsync(query, ct);
+        var items = found.Select(result => library.GetItemById(result.ItemId)).OfType<BaseItem>().ToArray();
+        var page = items.Skip(Math.Max(0, start));
+        if (limit is > 0) page = page.Take(Math.Min(limit.Value, 200));
+        return new QueryResult<BaseItemDto>
+        {
+            Items = dtos.GetBaseItemDtos(page.ToArray(), options, user, null, false), StartIndex = start, TotalRecordCount = items.Length
+        };
+    }
 
     public async Task<QueryResult<BaseItemDto>?> BrowseAsync(Folder folder, User user, int start, int? limit, DtoOptions options, CancellationToken ct)
     {

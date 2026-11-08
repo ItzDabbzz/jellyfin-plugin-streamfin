@@ -46,9 +46,12 @@ public sealed class ServiceRegistration : IPluginServiceRegistrator
         services.AddSingleton<IChannel, MusicChannel>();
         services.AddSingleton<IChannel, HubChannel>();
         services.AddSingleton<SearchHistory>();
-        services.AddSingleton<MediaBrowser.Controller.Library.ISearchProvider, OnlineSearch>();
-        services.AddSingleton<MediaBrowser.Controller.Library.ISearchProvider, FilmSearch>();
-        services.AddSingleton<MediaBrowser.Controller.Library.ISearchProvider, MusicSearch>();
+        services.AddSingleton<OnlineSearch>();
+        services.AddSingleton<FilmSearch>();
+        services.AddSingleton<MusicSearch>();
+        services.AddSingleton<MediaBrowser.Controller.Library.ISearchProvider>(provider => provider.GetRequiredService<OnlineSearch>());
+        services.AddSingleton<MediaBrowser.Controller.Library.ISearchProvider>(provider => provider.GetRequiredService<FilmSearch>());
+        services.AddSingleton<MediaBrowser.Controller.Library.ISearchProvider>(provider => provider.GetRequiredService<MusicSearch>());
         services.AddScoped<ContentAccess>();
         services.AddScoped<CatalogBrowser>();
         services.AddScoped<StreamingNavigation>();

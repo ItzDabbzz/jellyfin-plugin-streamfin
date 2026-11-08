@@ -20,6 +20,8 @@ public sealed class Configuration : BasePluginConfiguration
     public bool AnimeProviderFallback { get; set; } = true;
     public bool HideAdultContent { get; set; } = true;
     public bool HideEcchiContent { get; set; } = true;
+    // Off: Jellyfin's search no longer asks for online titles; channels and saved results stay.
+    public bool SearchResultsEnabled { get; set; } = true;
     public int MetadataCacheMinutes { get; set; } = 60;
     public bool FilmEnabled { get; set; } = true;
     public string TmdbApiKey { get; set; } = "";

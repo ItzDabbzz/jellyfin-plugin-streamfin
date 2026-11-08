@@ -23,7 +23,7 @@ public sealed class MusicSearch(MusicCatalog catalog, ILibraryManager library, S
     public Guid SearchFolderId => library.GetNewItemId(FolderKey, typeof(Folder));
     private static bool Wants(SearchProviderQuery query, BaseItemKind kind) => query.IncludeItemTypes.Length == 0
         ? !query.ExcludeItemTypes.Contains(kind) : query.IncludeItemTypes.Contains(kind);
-    public bool CanSearch(SearchProviderQuery query) => query.SearchTerm.Trim().Length is >= 2 and <= 100
+    public bool CanSearch(SearchProviderQuery query) => StreamableSearch.Enabled && query.SearchTerm.Trim().Length is >= 2 and <= 100
         && (Wants(query, BaseItemKind.MusicArtist) || Wants(query, BaseItemKind.MusicAlbum) || Wants(query, BaseItemKind.Audio))
         && (query.MediaTypes.Length == 0 || query.MediaTypes.Contains(MediaType.Audio))
         && (!query.ParentId.HasValue || query.ParentId == Guid.Empty || query.ParentId == ChannelId || query.ParentId == SearchFolderId);
@@ -52,7 +52,7 @@ public sealed class MusicSearch(MusicCatalog catalog, ILibraryManager library, S
         item.Overview = info.Overview;
         item.ProductionYear = info.ProductionYear;
         item.PremiereDate = info.PremiereDate;
-        item.Tags = item.Tags.Where(tag => tag != SearchHistory.HiddenTag).Append("StreamFin").Distinct().ToArray();
+        item.Tags = StreamableSearch.Mark(item.Tags);
         item.ProviderIds = info.ProviderIds;
         // Generic search groups by this key; a shared NULL would collapse unrelated results.
         item.PresentationUniqueKey = "streamfin-search-" + info.Id;

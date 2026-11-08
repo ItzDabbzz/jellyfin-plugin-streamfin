@@ -90,6 +90,17 @@ public sealed class ChannelAccessFilter(ILibraryManager library, IAuthorizationC
                         context.Result = new BadRequestObjectResult("Invalid catalog page.");
                         return;
                     }
+                    var searchTerm = context.ActionArguments.TryGetValue("searchTerm", out var termValue) && termValue is string term && !string.IsNullOrWhiteSpace(term)
+                        ? term.Trim() : context.HttpContext.Request.Query["searchTerm"].ToString().Trim();
+                    var include = context.ActionArguments.TryGetValue("includeItemTypes", out var includeValue) && includeValue is BaseItemKind[] kinds ? kinds : [];
+                    var exclude = context.ActionArguments.TryGetValue("excludeItemTypes", out var excludeValue) && excludeValue is BaseItemKind[] excluded ? excluded : [];
+                    var media = context.ActionArguments.TryGetValue("mediaTypes", out var mediaValue) && mediaValue is MediaType[] mediaTypes ? mediaTypes : [];
+                    if (auth.User is not null && searchTerm.Length is >= 2 and <= 100)
+                    {
+                        context.Result = new OkObjectResult(await catalogs.SearchAsync(parent, auth.User, searchTerm, include, exclude, media, start, limit,
+                            new DtoOptions(true), context.HttpContext.RequestAborted));
+                        return;
+                    }
                     if (auth.User is not null && await catalogs.BrowseAsync(parent, auth.User, start, limit, new DtoOptions(true), context.HttpContext.RequestAborted) is { } catalogPage)
                     {
                         context.Result = new OkObjectResult(catalogPage);
