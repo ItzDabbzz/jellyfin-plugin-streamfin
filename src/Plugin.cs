@@ -69,7 +69,17 @@ public sealed class Plugin : BasePlugin<Configuration>, IHasWebPages
     public override Guid Id => PluginId;
     public override string Name => "StreamFin";
     public override string Description => "Anime, movies, TV and lossless music from online sources, as Jellyfin channels.";
-    public IEnumerable<PluginPageInfo> GetPages() => [new() { Name = "streamfin", EmbeddedResourcePath = "StreamFin.Configuration.html" }];
+    // EnableInMainMenu puts StreamFin in the dashboard sidebar (Jellyfin 10.10+/12.x); without it the page is only
+    // reachable from the plugin card's settings button.
+    public IEnumerable<PluginPageInfo> GetPages() => [new()
+    {
+        Name = "streamfin",
+        DisplayName = "StreamFin",
+        EmbeddedResourcePath = "StreamFin.Configuration.html",
+        EnableInMainMenu = true,
+        MenuSection = "server",
+        MenuIcon = "extension"
+    }];
     public static string[] Ordered(string[]? saved, params string[] known) => (saved ?? []).Where(s => known.Contains(s)).Concat(known).Distinct().ToArray();
     public static bool Allows(Guid id) => id != Guid.Empty && Instance?.Configuration is { Enabled: true } c
         && c.AllowedUserIds.Any(value => Guid.TryParse(value, out var allowed) && allowed == id);
