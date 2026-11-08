@@ -28,6 +28,11 @@ const { chromium } = require(process.env.PLAYWRIGHT_MODULE || process.argv[2] ||
             if (libraryFail) throw new Error('mock library failure');
             return [{ ItemId: '11111111111111111111111111111111', Name: 'Local movies', CollectionType: 'movies' }, { ItemId: '22222222222222222222222222222222', Name: 'TV <not markup>', CollectionType: 'tvshows' }];
           }
+          if (options.url.includes('StreamFin/Cache')) {
+            if (options.type === 'POST' && !options.url.endsWith('/Clear')) return { queued: true, status: { collections: [] } };
+            return { collections: [{ name: 'anime', entries: 12, capacity: 600 }, { name: 'films', entries: 0, capacity: 600 }],
+              entries: 12, capacity: 1200, hits: 9, misses: 3, stale: 0, trimmed: 0, clearedAt: null, hitRate: 0.75 };
+          }
           return options.url.includes('MusicSaves') ? { Folder: '', Libraries: [], Saves: [] } : { Monochrome: { State: 'Healthy' }, Deezer: { State: 'Healthy' }, YouTube: { State: 'Healthy' } };
         }
       };
@@ -35,12 +40,15 @@ const { chromium } = require(process.env.PLAYWRIGHT_MODULE || process.argv[2] ||
     }, { config, users, fail, libraryFail });
     await page.setContent(html);
     await page.locator('#streamfinConfig').evaluate(element => element.dispatchEvent(new Event('viewshow')));
-    await page.waitForFunction(() => document.querySelector('#streamfinStatus').textContent !== 'Loading settings...');
+    await page.waitForFunction(() => !document.querySelector('#streamfinStatus').textContent.startsWith('Loading'));
   }
   async function save() {
     await page.locator('#streamfinForm').evaluate(form => form.requestSubmit());
     await page.waitForFunction(() => window.savedSettings !== null);
     return page.evaluate(() => window.savedSettings);
+  }
+  async function tab(name) {
+    await page.getByRole('link', {name, exact: true}).click();
   }
   try {
     await load();
@@ -50,6 +58,8 @@ const { chromium } = require(process.env.PLAYWRIGHT_MODULE || process.argv[2] ||
     console.log('PASS section navigation scrolls without changing the Jellyfin route hash');
     assert.equal(await page.locator('#streamfinUsers .streamfinUser').count(), 2);
     assert.equal(await page.locator('#streamfinUsers input:checked').count(), 1);
+    assert.equal(await page.locator('#searchResultsEnabled').isChecked(), true);
+    assert.match(await page.locator('#streamfinCacheStats').innerText(), /Entries kept/);
     assert.equal(await page.getByLabel('App password for Alex', { exact: true }).inputValue(), 'existing-password');
     let saved = await save();
     assert.deepEqual(saved.AllowedUserIds, [users[0].Id]);
@@ -59,32 +69,41 @@ const { chromium } = require(process.env.PLAYWRIGHT_MODULE || process.argv[2] ||
     assert.equal(saved.AnimeProviderFallback, true);
     assert.equal(saved.StreamingLibraryName, 'StreamFin');
     assert.equal(saved.MusicPrefetch, true);
+    assert.equal(saved.SearchResultsEnabled, true);
     assert.equal(await page.getByLabel('Local movies', { exact: true }).inputValue(), 'movies');
     assert.equal(await page.getByLabel('TV <not markup>', { exact: true }).inputValue(), '');
     assert.deepEqual(saved.StreamingLibraryLinks, [{ LibraryId: '11111111111111111111111111111111', Category: 'movies' }]);
     console.log('PASS unchanged save preserves allowed users, associated app passwords, source order and fallback');
 
-    const morgan = page.locator('.streamfinUser').filter({ hasText: 'Morgan — allow StreamFin access' });
+    const morgan = page.locator('.streamfinUser').filter({ hasText: 'Morgan' });
+    assert.equal(await morgan.getByRole('button', { name: 'New password', exact: true }).isDisabled(), true);
     await morgan.locator('input[type=checkbox]').check();
     await morgan.getByRole('button', { name: 'New password', exact: true }).click();
     const generated = await page.getByLabel('App password for Morgan', { exact: true }).inputValue();
     assert.equal(generated.length, 24);
+    await tab('Sources');
     await page.locator('#animeProviderFallback').uncheck();
-    await page.getByLabel('Get the next song ready', { exact: true }).uncheck();
-    await page.locator('#streamingNavigationMode').selectOption('Both');
-    await page.getByLabel('Streaming library name', { exact: true }).fill('  Online media  ');
-    await page.getByLabel('TV <not markup>', { exact: true }).selectOption('anime');
     await page.locator('#playOrder .streamfinDown:enabled').click();
+    await tab('Playback & cache');
+    await page.getByLabel('Get the next song ready', { exact: true }).uncheck();
+    await tab('Navigation');
+    await page.locator('#searchResultsEnabled').uncheck();
+    await page.locator('#streamingNavigationMode').selectOption('Both');
+    await page.getByLabel('Streaming hub name', { exact: true }).fill('  Online media  ');
+    assert.match(await page.locator('#streamfinStatus').innerText(), /Unsaved changes/);
+    await page.getByLabel('TV <not markup>', { exact: true }).selectOption('anime');
     await page.evaluate(() => { window.savedSettings = null; });
     saved = await save();
     assert.deepEqual(saved.AllowedUserIds, users.map(user => user.Id));
     assert.equal(saved.SubsonicPasswords.find(value => value.UserId === users[1].Id).Password, generated);
     assert.equal(saved.AnimeProviderFallback, false);
     assert.equal(saved.MusicPrefetch, false);
+    assert.equal(saved.SearchResultsEnabled, false);
     assert.equal(saved.StreamingNavigationMode, 'Both');
     assert.equal(saved.StreamingLibraryName, 'Online media');
     assert.deepEqual(saved.MusicPlayOrder, ['monochrome', 'youtube']);
     assert.equal(saved.StreamingLibraryLinks.find(link => link.LibraryId === '22222222222222222222222222222222').Category, 'anime');
+    await tab('User access');
     await morgan.getByRole('button', { name: 'Remove', exact: true }).click();
     await page.evaluate(() => { window.savedSettings = null; });
     saved = await save();
@@ -92,12 +111,22 @@ const { chromium } = require(process.env.PLAYWRIGHT_MODULE || process.argv[2] ||
     assert.equal(saved.SubsonicPasswords[0].UserId, users[0].Id);
     console.log('PASS per-user access, password generation/removal, source reorder, navigation and fallback changes save correctly');
 
+    await tab('Playback & cache');
+    await page.locator('#streamfinClearCache').click();
+    assert.match(await page.locator('#streamfinCacheStatus').innerText(), /Caches cleared/);
+    await page.locator('#streamfinWarmCache').click();
+    assert.match(await page.locator('#streamfinCacheStatus').innerText(), /warm-up queued/);
+    await tab('Maintenance');
+    await page.locator('#streamfinRefresh').click();
+    assert.match(await page.locator('#streamfinRefreshStatus').innerText(), /catalog refresh queued/);
+    console.log('PASS cache stats render and clear, warm and refresh actions report their result');
+
     // Minimal host sizing emulates Jellyfin input/button widths, not its full theme.
     await page.addStyleTag({ content: 'body{margin:0;font:16px sans-serif;background:#181818;color:white}.content-primary{padding:24px}input:not([type=checkbox]),select{box-sizing:border-box;width:100%;padding:12px;font:inherit}button{padding:12px}label{display:block}.fieldDescription{font-size:.9em}a{color:inherit}' });
     for (const width of [1440, 390, 320]) {
       await page.setViewportSize({ width, height: 1000 });
       assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth), true, 'horizontal overflow at ' + width);
-      assert.equal(await page.locator('.streamfinNav a').count(), 5);
+      assert.equal(await page.locator('.streamfinNav a').count(), 6);
     }
     console.log('PASS 1440px, 390px and 320px responsive geometry (mock host theme)');
     await page.locator('#streamfinConfig').evaluate(element => element.dispatchEvent(new Event('viewhide')));
@@ -112,6 +141,8 @@ const { chromium } = require(process.env.PLAYWRIGHT_MODULE || process.argv[2] ||
     assert.equal(await page.locator('#streamfinSave').isDisabled(), true);
     assert.equal(await page.locator('#streamfinRefresh').isDisabled(), true);
     assert.equal(await page.locator('#streamfinClearSearch').isDisabled(), true);
+    assert.equal(await page.locator('#streamfinClearCache').isDisabled(), true);
+    assert.equal(await page.locator('#streamfinWarmCache').isDisabled(), true);
     await page.locator('#streamfinForm').evaluate(form => form.dispatchEvent(new Event('submit', { cancelable: true })));
     assert.equal(await page.evaluate(() => window.savedSettings), null);
     assert.deepEqual(errors, []);
