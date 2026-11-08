@@ -19,7 +19,9 @@ public sealed class MangaExceptionFilter : ExceptionFilterAttribute
         var status = context.Exception switch { UnauthorizedAccessException => 403, KeyNotFoundException or FileNotFoundException => 404, ArgumentException or InvalidDataException => 400, HttpRequestException => 502, OperationCanceledException => 408, _ => 500 };
         context.Result = new ObjectResult(new { error = status == 500 ? "Operation failed. See Jellyfin logs for diagnostics." : context.Exception.Message }) { StatusCode = status };
         context.ExceptionHandled = true;
-        context.HttpContext.RequestServices.GetService<Microsoft.Extensions.Logging.ILogger<MangaExceptionFilter>>()?.LogWarning(context.Exception, "StreamFin manga request failed");
+        // A series with no cover yet is normal; answer 404 without filling the log.
+        if (context.Exception is not (FileNotFoundException or KeyNotFoundException))
+            context.HttpContext.RequestServices.GetService<Microsoft.Extensions.Logging.ILogger<MangaExceptionFilter>>()?.LogWarning(context.Exception, "StreamFin manga request failed");
     }
 }
 
