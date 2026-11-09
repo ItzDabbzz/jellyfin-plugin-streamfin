@@ -16,7 +16,7 @@ namespace StreamFin;
 // IChannel.IsEnabledFor hides the channel, but cached descendants can also be requested
 // via Jellyfin's generic item/playback endpoints. Protect those routes and their results.
 public sealed class ChannelAccessFilter(ILibraryManager library, IAuthorizationContext authorization, ArtworkAccess artwork, ContentAccess content,
-    StreamingNavigation navigation, LibraryStreamingLinks links, IUserDataManager userData) : IAsyncActionFilter, IAsyncResultFilter
+    StreamingNavigation navigation, LibraryStreamingLinks links) : IAsyncActionFilter, IAsyncResultFilter
 {
     private bool IsOurs(Guid id) => id != Guid.Empty && content.IsOurs(id);
     private Task<bool> Allowed(ActionContext context) => artwork.AllowsAsync(context.HttpContext);
@@ -31,20 +31,6 @@ public sealed class ChannelAccessFilter(ILibraryManager library, IAuthorizationC
         if (dto.Type == BaseItemKind.Audio && MusicChannel.IsAvailable && IsOurs(dto.Id)) dto.HasLyrics = true;
         if (dto.Type is not (BaseItemKind.Season or BaseItemKind.MusicAlbum or BaseItemKind.MusicArtist) || dto.ChildCount > 0 || !IsOurs(dto.Id)) return;
         dto.ChildCount = Math.Max(1, library.GetCount(new InternalItemsQuery { ParentId = dto.Id, Recursive = false }));
-    }
-
-    // Jellyfin marked channel items played while their runtime was unknown. A played item with a
-    // halfway position is what makes Continue Watching start at zero instead of resuming.
-    private void RepairResume(BaseItemDto dto, Jellyfin.Database.Implementations.Entities.User? user)
-    {
-        if (dto.UserData is not { Played: true, PlaybackPositionTicks: > 0 } data || dto.RunTimeTicks is not > 0) return;
-        if (data.PlaybackPositionTicks >= dto.RunTimeTicks * 0.9) return;
-        data.Played = false;
-        if (user is null || library.GetItemById(dto.Id) is not { } item) return;
-        var saved = userData.GetUserData(user, item);
-        if (saved is null) return;
-        saved.Played = false;
-        userData.SaveUserData(user, item, saved, MediaBrowser.Model.Entities.UserDataSaveReason.UpdateUserData, CancellationToken.None);
     }
 
     public async Task OnActionExecutionAsync(ActionExecutingContext context, ActionExecutionDelegate next)
@@ -112,13 +98,13 @@ public sealed class ChannelAccessFilter(ILibraryManager library, IAuthorizationC
                 case BaseItemDto item:
                     var resolved = await Navigate(item);
                     if (resolved is null || !await Visible(resolved.Id, listing: false)) context.Result = new NotFoundResult();
-                    else { Countable(resolved); RepairResume(resolved, auth?.User); result.Value = resolved; }
+                    else { Countable(resolved); result.Value = resolved; }
                     break;
                 case QueryResult<BaseItemDto> query:
                     if (auth?.User is not null) await links.ApplyAsync(query, auth.User, context.HttpContext, context.HttpContext.RequestAborted);
                     var kept = new List<BaseItemDto>();
                     foreach (var dto in query.Items)
-                        if (await Navigate(dto) is { } mapped && await Visible(mapped.Id)) { Countable(mapped); RepairResume(mapped, auth?.User); kept.Add(mapped); }
+                        if (await Navigate(dto) is { } mapped && await Visible(mapped.Id)) { Countable(mapped); kept.Add(mapped); }
                     var filtered = kept.ToArray();
                     query.TotalRecordCount = Math.Max(filtered.Length, query.TotalRecordCount - (query.Items.Count - filtered.Length));
                     query.Items = filtered;
@@ -126,7 +112,7 @@ public sealed class ChannelAccessFilter(ILibraryManager library, IAuthorizationC
                 case IEnumerable<BaseItemDto> items:
                     var visible = new List<BaseItemDto>();
                     foreach (var dto in items)
-                        if (await Navigate(dto) is { } mapped && await Visible(mapped.Id)) { Countable(mapped); RepairResume(mapped, auth?.User); visible.Add(mapped); }
+                        if (await Navigate(dto) is { } mapped && await Visible(mapped.Id)) { Countable(mapped); visible.Add(mapped); }
                     result.Value = visible.ToArray();
                     break;
                 // Remote-control users see what others are playing; hide StreamFin titles they may not see.
