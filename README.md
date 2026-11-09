@@ -66,7 +66,7 @@ Nothing is downloaded ahead of time. The only media kept on disk is the song cac
 - **Sources** — 90 in the built-in catalog, 7 on by default. Each source has its own pacing, priority, download limit and a test button.
 - **Search & request** — search every enabled source, request a series, and monitor it for new chapters.
 - **Downloads** — CBZ archives into a folder your Jellyfin manga or books library reads. Optional AVIF conversion, a 50 GiB storage budget by default, retry/pause/cancel.
-- **Reader** — a manga button in the Jellyfin header (needs the File Transformation plugin), plus the full reader from the settings page. Progress and bookmarks are per user.
+- **Reader** — the Manga tab in the StreamFin settings page, plus an optional header shortcut through the File Transformation plugin. Progress and bookmarks are per user.
 - **Metadata** — an optional ComicVine key adds publisher, year, credits and summary to `ComicInfo.xml`.
 
 ### Everywhere
@@ -92,7 +92,7 @@ Nothing is downloaded ahead of time. The only media kept on disk is the song cac
 | Optional | Adds |
 |---|---|
 | TMDB API key | Movies & TV — required for that channel |
-| [File Transformation](https://github.com/IAmParadox27/jellyfin-plugin-file-transformation) | Manga button in the Jellyfin header |
+| [File Transformation](https://github.com/IAmParadox27/jellyfin-plugin-file-transformation) | Optional Manga shortcut in the Jellyfin header; the Manga tab works without it |
 | FFmpeg with libaom-av1 | AVIF manga pages (smaller files) |
 | ComicVine API key | Manga publisher, year, credits, summary |
 | Last.fm API key | Similar artists when ListenBrainz has none |
