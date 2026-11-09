@@ -34,6 +34,10 @@ browser tab full of ads never did.
 It started as AniFin, anime only. When the anime sources started breaking I rewrote the
 source layer, added movies and TV while I was at it, and renamed it StreamFin.
 
+## Why Fork
+
+I liked the idea of StreamFin, but hated quite a few issues with it. One was the organization so i redid that so its easier to maintain, I also wanted some extra features I didnt quite know if anyone else would personally want. Like full manga downloading/managment and reading along side streaming.
+
 ## What it does
 
 - **Anime**: Popular, This Season and A to Z, from AniList. Pick a title, a source, then
