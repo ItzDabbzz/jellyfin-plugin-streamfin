@@ -804,7 +804,8 @@
             page.querySelector('#streamfinClearSearch').disabled = false;
             page.querySelector('#streamfinClearCache').disabled = false;
             page.querySelector('#streamfinWarmCache').disabled = false;
-            page.querySelector('#streamfinStatus').textContent = '';
+            page.querySelector('#streamfinStatus').textContent = config.Enabled && !(config.AllowedUserIds || []).length
+              ? 'No one has StreamFin access, so its channels are hidden. Allow people under User access.' : '';
             showSection(rememberedTab());
             await Promise.all([renderSaves(), renderHealth(), renderCache()]);
             clearInterval(healthTimer);
@@ -873,6 +874,13 @@
               return;
             }
             config.AllowedUserIds = Array.from(page.querySelectorAll('#streamfinUsers input:checked'), input => input.value);
+            // With no one allowed every StreamFin channel disappears, which looks like the plugin is broken.
+            if (config.Enabled && config.AllowedUserIds.length === 0
+              && !window.confirm('No one has StreamFin access, so its channels will be hidden for every user. Save anyway?')) {
+              page.querySelector('#streamfinStatus').textContent = 'Not saved. Allow at least one person under User access.';
+              showSection('streamfinAccess');
+              return;
+            }
             config.SubsonicEnabled = page.querySelector('#subsonicEnabled').checked;
             config.SubsonicPreferLossless = page.querySelector('#subsonicLossless').checked;
             config.SubsonicPasswords = Object.entries(passwords).filter(([, password]) => password).map(([UserId, Password]) => ({UserId, Password}));
