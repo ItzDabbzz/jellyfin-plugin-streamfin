@@ -11,7 +11,7 @@ public static class SeriesMetadata
     public static async Task<int> RefreshSeries(Store store, LibraryStorage storage, CoverService covers, MangaSourceRegistry sources, string seriesId, string apiKey, CancellationToken ct, ILibraryManager? libraries = null)
     {
         var subscription = store.Get<Subscription>("series", seriesId);
-        if (subscription is not null)
+        if (subscription is not null && subscription.Series.SourceId != "local")
         {
             try
             {
@@ -29,14 +29,14 @@ public static class SeriesMetadata
         var series = store.Get<Subscription>("series", seriesId)?.Series ?? throw new KeyNotFoundException("Unknown series.");
         // Refresh always searches again, so a miss cached by an older version does not stick.
         var comic = await MangaMetadata.Resolve(store, series, apiKey, ct, force: true);
-        // Tell Jellyfin the Comic Vine id so the series' External IDs are filled in. A failure here must not stop the refresh.
-        if (libraries is not null && comic?.VolumeId is int volumeId)
+        // Jellyfin does not read ComicInfo.series.xml, so push the merged metadata onto its own item.
+        if (libraries is not null)
         {
-            try { await JellyfinIds.SetComicVineAsync(libraries, storage.Absolute(MangaNames.FolderFor(store, series)), volumeId, ct); }
+            try { await JellyfinIds.ApplyAsync(libraries, storage.Absolute(MangaNames.FolderFor(store, series)), comic, ct); }
             catch (Exception ex) when (ex is not OperationCanceledException) { }
         }
         RenameStatusNamedChapters(store, storage, seriesId);
-        var jobs = store.All<DownloadJob>("job").Where(j => j.Chapter.SeriesId == seriesId && j.Status == "Complete" && j.RelativePath != null).ToList();
+        var jobs = store.All<DownloadJob>("job").Where(j => j.Chapter.SeriesId == seriesId && j.Status == "Complete" && IsArchive(j.RelativePath)).ToList();
         var updated = 0;
         foreach (var job in jobs)
         {
@@ -63,6 +63,28 @@ public static class SeriesMetadata
             }
             finally { if (File.Exists(temporary)) File.Delete(temporary); }
         }
+        // Jellyfin reads <book>.xml next to a PDF; a folder ComicInfo.xml would rename every chapter.
+        foreach (var job in store.All<DownloadJob>("job").Where(j => j.Chapter.SeriesId == seriesId && j.Status == "Complete"
+            && string.Equals(Path.GetExtension(j.RelativePath), ".pdf", StringComparison.OrdinalIgnoreCase)))
+        {
+            ct.ThrowIfCancellationRequested();
+            try
+            {
+                var pdf = storage.Absolute(job.RelativePath!);
+                if (!File.Exists(pdf)) continue;
+                var sidecarPath = Path.ChangeExtension(pdf, ".xml");
+                var wanted = ComicInfoFile.Build(job.Chapter, series, 0, comic);
+                if (File.Exists(sidecarPath))
+                {
+                    try { if (System.Xml.Linq.XNode.DeepEquals(System.Xml.Linq.XDocument.Load(sidecarPath).Root, wanted.Root)) continue; }
+                    catch (System.Xml.XmlException) { }
+                }
+                var temporary = sidecarPath + "." + Guid.NewGuid().ToString("N") + ".tmp";
+                await using (var stream = File.Create(temporary)) await wanted.SaveAsync(stream, System.Xml.Linq.SaveOptions.None, ct);
+                File.Move(temporary, sidecarPath, overwrite: true);
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or System.Xml.XmlException) { }
+        }
         // The cached volume list is reused; only a first run (or a cache miss) asks MangaDex for it.
         var volumes = await VolumeArt.Index(store, series, ct);
         var covered = 0;
@@ -82,15 +104,20 @@ public static class SeriesMetadata
         return updated;
     }
 
-    // True when the archive's ComicInfo would differ from what is stored now (compared as XML, ignoring formatting).
-    // Files named from source status text (for example "Last Read 2024-09-07…") get the clean chapter name.
-    // The stored path follows the file, so the reader and the downloads tab keep working.
-    // Writes ComicInfo.xml into the series folder (not into a chapter). Skipped when the content is already current.
+    // Jellyfin's external ComicInfo provider falls back to ComicInfo.xml in a chapter's folder, so a
+    // series-level ComicInfo.xml renames every chapter to the series title. Keep series metadata under a
+    // name Jellyfin does not read, and move an older generated ComicInfo.xml out of its way.
     private static async Task WriteSeriesInfo(Store store, LibraryStorage storage, Series series, VolumeMetadata? comic, CancellationToken ct)
     {
         var folder = storage.Absolute(MangaNames.FolderFor(store, series));
         if (!Directory.Exists(folder)) return;
-        var path = Path.Combine(folder, "ComicInfo.xml");
+        var path = Path.Combine(folder, "ComicInfo.series.xml");
+        var legacy = Path.Combine(folder, "ComicInfo.xml");
+        if (File.Exists(legacy) && LooksLikeGeneratedSeriesInfo(legacy, series))
+        {
+            try { File.Move(legacy, path, overwrite: true); }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { }
+        }
         var wanted = ComicInfoFile.BuildSeries(series, comic);
         if (File.Exists(path))
         {
@@ -110,12 +137,28 @@ public static class SeriesMetadata
         finally { if (File.Exists(temporary)) File.Delete(temporary); }
     }
 
+    // Older builds wrote this file; only move it when it has the shape the plugin generated.
+    private static bool LooksLikeGeneratedSeriesInfo(string path, Series series)
+    {
+        try
+        {
+            var root = System.Xml.Linq.XDocument.Load(path).Root;
+            if (root is null || root.Name.LocalName != "ComicInfo") return false;
+            if (root.Element("Number") is not null) return false;
+            var web = root.Element("Web")?.Value;
+            var title = root.Element("Series")?.Value ?? root.Element("Title")?.Value;
+            return web == series.Url || title == ComicVine.CleanTitle(series.Title);
+        }
+        catch (Exception ex) when (ex is System.Xml.XmlException or IOException or UnauthorizedAccessException) { return false; }
+    }
+
     private static void RenameStatusNamedChapters(Store store, LibraryStorage storage, string seriesId)
     {
         foreach (var job in store.All<DownloadJob>("job").Where(j => j.Chapter.SeriesId == seriesId && j.Status == "Complete" && j.RelativePath != null).ToList())
         {
             try
             {
+                if (!IsArchive(job.RelativePath)) continue;
                 var rawTitle = job.Chapter.Title ?? "";
                 var cleanTitle = MangaNames.CleanChapterTitle(rawTitle);
                 if (cleanTitle == rawTitle) continue;
@@ -137,6 +180,7 @@ public static class SeriesMetadata
 
     private static async Task<bool> ComicInfoChanged(string path, Chapter chapter, Series series, VolumeMetadata? comic, CancellationToken ct)
     {
+        if (!IsArchive(path)) return false;
         using var archive = ZipFile.OpenRead(path);
         var pages = archive.Entries.Count(e => e.Name != "ComicInfo.xml");
         var wanted = ComicInfoFile.Build(chapter, series, pages, comic);
@@ -163,4 +207,6 @@ public static class SeriesMetadata
         await File.WriteAllBytesAsync(Path.Combine(folder, "folder" + extension), bytes, ct);
         return extension;
     }
+
+    private static bool IsArchive(string? path) => Path.GetExtension(path) is ".cbz" or ".zip";
 }

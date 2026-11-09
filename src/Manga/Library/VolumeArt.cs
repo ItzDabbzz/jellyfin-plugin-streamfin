@@ -130,6 +130,7 @@ public static class VolumeArt
     // Rewrites one chapter archive with its volume cover first. Chapters already done are skipped.
     public static async Task<bool> Apply(Store store, LibraryStorage storage, Chapter chapter, string relativePath, VolumeIndex index, CancellationToken ct)
     {
+        if (!string.Equals(Path.GetExtension(relativePath), ".cbz", StringComparison.OrdinalIgnoreCase)) return false;
         if (store.Get<string>("chapter-cover", chapter.Id) is not null) return false;
         var volume = index.ChapterVolume.GetValueOrDefault(Key(chapter.Number));
         if (volume is null || !index.VolumeCover.TryGetValue(volume, out var url)) return false;

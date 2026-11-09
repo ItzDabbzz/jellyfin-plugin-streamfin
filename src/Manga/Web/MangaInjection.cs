@@ -51,6 +51,6 @@ public sealed class MangaInjectionService(ILogger<MangaInjectionService> logger)
             catch (Exception ex) { logger.LogWarning(ex, "StreamFin manga page injection could not register yet"); }
             await Task.Delay(TimeSpan.FromSeconds(2), stoppingToken);
         }
-        logger.LogWarning("StreamFin manga navigation needs the File Transformation plugin; install it and restart Jellyfin to enable the header reader.");
+        logger.LogInformation("The optional StreamFin manga header shortcut needs the File Transformation plugin; the Manga page in the main menu works without it.");
     }
 }

@@ -70,7 +70,8 @@ public sealed class Plugin : BasePlugin<Configuration>, IHasWebPages
     public override string Name => "StreamFin";
     public override string Description => "Anime, movies, TV and lossless music from online sources, as Jellyfin channels.";
     // EnableInMainMenu puts StreamFin in the dashboard sidebar (Jellyfin 10.10+/12.x); without it the page is only
-    // reachable from the plugin card's settings button.
+    // reachable from the plugin card's settings button. Keep one page per plugin: Jellyfin's sidebar adds an entry
+    // for the plugin as well as for each page, so a second page makes StreamFin appear twice.
     public IEnumerable<PluginPageInfo> GetPages() => [new()
     {
         Name = "streamfin",

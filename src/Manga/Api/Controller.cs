@@ -29,6 +29,7 @@ public sealed record RequestBody(string SourceId, string Url);
 public sealed record MonitorBody(bool Monitoring);
 public sealed record PendingRequest(string SourceId, string Url, string User, DateTimeOffset RequestedAt, string? Error = null);
 public sealed record TestBody(string Query, string? SeriesUrl = null, bool Download = false);
+public sealed record ImportBody(string Path, string? Title = null);
 
 public sealed class MangaJsonFilter : ResultFilterAttribute
 {
@@ -231,7 +232,23 @@ public sealed class MangaController(Store store, MangaSourceRegistry sources, Co
         }));
     }
     [HttpGet("chapters/{id}/manifest")]
-    public ActionResult Manifest(string id) { Access(); var job = Complete(id); return Ok(new { job.Chapter, pages = storage.Entries(job).Count }); }
+    public ActionResult Manifest(string id)
+    {
+        Access(); var job = Complete(id);
+        var pdf = string.Equals(Path.GetExtension(job.RelativePath), ".pdf", StringComparison.OrdinalIgnoreCase);
+        return Ok(new { job.Chapter, pages = pdf ? 0 : storage.Entries(job).Count, pdf });
+    }
+    // PDF chapters are read by the browser's viewer; images inside CBZ files use the page endpoint.
+    [HttpGet("chapters/{id}/file")]
+    public ActionResult Document(string id)
+    {
+        Access(); var job = Complete(id);
+        if (!string.Equals(Path.GetExtension(job.RelativePath), ".pdf", StringComparison.OrdinalIgnoreCase)) throw new ArgumentException("That chapter is not a PDF.");
+        var path = storage.Absolute(job.RelativePath ?? throw new FileNotFoundException());
+        if (!System.IO.File.Exists(path)) throw new FileNotFoundException("Chapter file is missing.");
+        Response.Headers.CacheControl = "private, max-age=300";
+        return PhysicalFile(path, "application/pdf", enableRangeProcessing: true);
+    }
     [HttpGet("chapters/{id}/pages/{page:int}")]
     public async Task<ActionResult> Page(string id, int page, CancellationToken ct)
     {
@@ -249,6 +266,56 @@ public sealed class MangaController(Store store, MangaSourceRegistry sources, Co
         if (progress.SeriesId != chapter.Chapter.SeriesId || progress.Page < 0 || progress.Page >= chapter.Pages) throw new ArgumentException("Invalid reading progress.");
         store.Put("progress:" + UserId().ToString("N"), progress.ChapterId, progress with { UpdatedAt = DateTimeOffset.UtcNow }); return NoContent();
     }
+    // Registers a folder that was copied into manga storage by hand, so it appears in the library and
+    // can be enriched (ComicVine, AniList) without being tied to a streaming source.
+    [HttpPost("admin/import"), Authorize(Policy = "RequiresElevation")]
+    public ActionResult Import([FromBody] ImportBody body)
+    {
+        var relative = (body.Path ?? "").Trim().Replace('\\', '/').Trim('/');
+        if (relative.Length == 0 || relative.Split('/').Any(part => part is "" or "." or ".."))
+            throw new ArgumentException("Enter a folder inside the manga storage folder.");
+        var folder = storage.Absolute(relative);
+        if (!Directory.Exists(folder)) throw new FileNotFoundException("That folder does not exist in manga storage.");
+        var files = Directory.EnumerateFiles(folder, "*", SearchOption.TopDirectoryOnly)
+            .Where(path => Path.GetExtension(path) is ".cbz" or ".cbr" or ".zip" or ".pdf")
+            .OrderBy(path => path, StringComparer.OrdinalIgnoreCase).ToArray();
+        if (files.Length == 0) throw new ArgumentException("That folder has no .cbz, .cbr or .pdf chapter files.");
+        var seriesId = Identity.For("local-series", relative);
+        if (store.Get<Subscription>("series", seriesId) is not null) throw new ArgumentException("That folder is already in the manga library.");
+        var title = string.IsNullOrWhiteSpace(body.Title) ? Path.GetFileName(folder) : body.Title.Trim();
+        var series = new Series(seriesId, "local", relative, title);
+        store.Put("series", seriesId, new Subscription(series, false, null, null));
+        store.Put("series-folder", seriesId, relative);
+        var index = 0;
+        foreach (var file in files)
+        {
+            var name = Path.GetFileNameWithoutExtension(file);
+            var chapter = new Chapter(Identity.For("local-chapter", relative, file), seriesId, file,
+                LocalChapterTitle(name), LocalChapterNumber(name, ++index));
+            store.Put("job", chapter.Id, new DownloadJob(chapter, "local", "import", "Complete", 0, null, null,
+                relative + "/" + Path.GetFileName(file), 0, System.IO.File.GetLastWriteTimeUtc(file)));
+        }
+        store.Event("Library", title + " · imported " + files.Length + " chapters from disk");
+        return Ok(new { series = title, chapters = files.Length });
+    }
+
+    private static string LocalChapterTitle(string name)
+    {
+        var match = System.Text.RegularExpressions.Regex.Match(name, @"issue[\s_-]*(\d+)",
+            System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+        return match.Success ? "Issue " + match.Groups[1].Value : MangaNames.CleanChapterTitle(name);
+    }
+
+    // "Rick and Morty 003 (2015)" is chapter 3: years and volume markers must not win.
+    private static decimal LocalChapterNumber(string name, int fallback)
+    {
+        var cleaned = System.Text.RegularExpressions.Regex.Replace(name, @"[\(\[](?:19|20)\d{2}[)\] ]", " ");
+        cleaned = System.Text.RegularExpressions.Regex.Replace(cleaned, @"\bvol(?:ume)?\.?\s*\d+", " ", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+        var matches = System.Text.RegularExpressions.Regex.Matches(cleaned, @"\d+(?:\.\d+)?");
+        return matches.Count > 0 && decimal.TryParse(matches[^1].Value, System.Globalization.NumberStyles.Number,
+            System.Globalization.CultureInfo.InvariantCulture, out var number) ? number : fallback;
+    }
+
     [HttpGet("admin/overview"), Authorize(Policy = "RequiresElevation")]
     public ActionResult Overview()
     {
