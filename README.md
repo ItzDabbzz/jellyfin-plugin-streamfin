@@ -1,5 +1,7 @@
 <p align="center"><img src="assets/banner.png" alt="StreamFin" width="600"></p>
 
+<p align="center"><b>Anime, movies, TV, music and manga in Jellyfin — streamed, not stored.</b></p>
+
 <p align="center">
   <a href="https://github.com/ItzDabbzz/jellyfin-plugin-streamfin/releases/latest"><img alt="Release" src="https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fgithub.com%2FItzDabbzz%2Fjellyfin-plugin-streamfin%2Freleases%2Flatest%2Fdownload%2Fmanifest.json&query=%24%5B0%5D.versions%5B0%5D.version&label=release&prefix=v&color=aa5cc3"></a>
   <a href="#install"><img alt="Jellyfin version" src="https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fgithub.com%2FItzDabbzz%2Fjellyfin-plugin-streamfin%2Freleases%2Flatest%2Fdownload%2Fmanifest.json&query=%24%5B0%5D.versions%5B0%5D.targetAbi&label=Jellyfin&suffix=%20or%20newer&color=00a4dc"></a>
@@ -11,214 +13,146 @@
   <a href="LICENSE"><img alt="License" src="https://img.shields.io/badge/license-GPL--2.0-blue"></a>
 </p>
 
-A Jellyfin plugin that streams anime, movies, TV and music instead of storing them. They
-show up as three channels, **Anime**, **Movies & TV** and **Music**, and play in Jellyfin's
-own player, with progress, resume and subtitles working like they do for everything else in
-the library. Music is lossless FLAC.
+<p align="center">
+  <a href="#install">Install</a> ·
+  <a href="#features">Features</a> ·
+  <a href="#settings">Settings</a> ·
+  <a href="#subsonic-apps">Subsonic</a> ·
+  <a href="#how-it-works">How it works</a> ·
+  <a href="#build">Build</a>
+</p>
 
-Nothing gets downloaded ahead of time. StreamFin finds the stream when you press play, and
-Jellyfin plays it through a small relay inside the plugin. The one exception is music: songs
-that have been played are kept on the server, up to a set size, so skipping and replaying
-are instant.
+## What it is
 
-## Why
+StreamFin adds four channels to Jellyfin. Catalogs supply the titles; video, audio and manga pages are fetched when you press play or open a chapter. Everything else behaves like a normal library — progress, resume, subtitles, search and user access.
 
-I host my own Jellyfin, but I do not have the storage to keep every movie, show and anime
-I might want to watch. Most of them I watch once anyway. Downloading something, waiting,
-and deleting it again to make room got old quickly.
+| | Channel | What you get |
+| --- | --- | --- |
+| 🗡️ | **Anime** | Popular, This Season and A–Z from AniList · HiAnime, AnimeGG and AnimeHeaven · Japanese audio, English subs only |
+| 🍿 | **Movies & TV** | Popular movies, Popular TV and Trending from TMDB · played from FlixHQ |
+| 🎵 | **Music** | Lossless FLAC from Monochrome · Deezer and YouTube fallbacks · radio · save to library |
+| 📖 | **Manga** | 90 sources · CBZ downloads into a Jellyfin library · built-in reader |
 
-So the server finds it for me when I want it. The library on disk is for the things I want
-to keep, and everything else streams. It works on the TV too, which a streaming site in a
-browser tab full of ads never did.
+Nothing is downloaded ahead of time. The only media kept on disk is the song cache and the manga you asked for.
 
-It started as AniFin, anime only. When the anime sources started breaking I rewrote the
-source layer, added movies and TV while I was at it, and renamed it StreamFin.
+## Features
 
-## Why Fork
+### Anime
 
-I liked the idea of StreamFin, but hated quite a few issues with it. One was the organization so i redid that so its easier to maintain, I also wanted some extra features I didnt quite know if anyone else would personally want. Like full manga downloading/managment and reading along side streaming.
+- **Browse** — Popular, This Season and A–Z from AniList, with covers and episode lists.
+- **Play** — HiAnime, AnimeGG or AnimeHeaven. The first provider that has a series becomes Season 1; the others appear as "Also on" seasons.
+- **Subtitles** — Japanese audio with English subtitles only, never a dub.
+- **Provider fallback** — a failed episode can be retried on another enabled provider, but only for the same episode number; ambiguous titles are rejected.
+- **Filters** — hide adult and ecchi titles, based on AniList tags.
 
-## What it does
+### Movies & TV
 
-- **Anime**: Popular, This Season and A to Z, from AniList. Pick a title, a source, then
-  an episode. Japanese audio with English subtitles only, never a dub.
-- **Movies & TV**: Popular movies, Popular TV and Trending, from TMDB. Movies play
-  directly, shows open into seasons and episodes.
-- **Music**: lossless FLAC, CD quality (16 bit, 44.1 kHz) and on some albums 24 bit hi-res, from
-  [Monochrome](https://github.com/monochrome-music/monochrome)'s catalog. Search for an
-  artist, album or song. Albums open as real album pages with numbered tracks, artists
-  open into their top tracks, albums and singles, **Starred** holds what you star in a
-  music app, and **Recently played** remembers what you listened to. The FLAC reaches the player as the catalog serves it, never transcoded.
-  Lyrics, synced where they exist, come from [LRCLIB](https://lrclib.net). When a song is
-  also published as a clean edit, the edit is hidden and the original plays. Played songs
-  are kept on the server (4 GB by default, **Song cache** in the settings, 0 turns it off),
-  so skipping within a song and playing it again do not wait for the catalog.
-  The catalog goes down now and then. Albums, artists and covers it has answered for are kept
-  on disk and open at once, songs in the song cache keep playing, and songs you played,
-  starred or put in a playlist keep their stars, scrobbles and lyrics until it is back.
-  Meanwhile searches, albums and artists come from [Deezer](https://www.deezer.com)'s public
-  catalog: descriptions and covers only, no account, no audio. A song found there plays the
-  catalog's FLAC of the same recording (matched by ISRC) once the catalog answers again, or
-  YouTube's copy until then. Untick **Deezer** under **Find music with** to turn it off.
-  A song the catalog cannot send can play from YouTube instead. That is off by default: tick
-  **YouTube** under **Play songs from**. It picks the artist's own upload of the same
-  length and plays it as AAC at about 128 kbps. That is not lossless, and the song's details say
-  so. Untick YouTube to only ever play new songs as FLAC. A song kept from YouTube changes to
-  the FLAC once the catalog is back: the next time it plays, or in the background for starred
-  songs, songs in playlists and songs played more than once. Those favourites are also kept in
-  the song cache as FLAC ahead of time, whenever Monochrome answers, up to half the cache
-  (Scheduled Tasks, **Keep favourite songs ready**, hourly and each time Monochrome is back, one
-  song at a time). While a song plays, the next one in the app's play queue or on the album is
-  fetched too, so it starts at once (**Get the next song ready**). YouTube refuses many data centre addresses
-  ("Sign in to confirm you're not a bot"). If your server's is one, set **YouTube proxy** to an
-  http or socks5 proxy with another address, such as a VPN container next to Jellyfin
-  (`http://user:password@vpn:8888`). Only YouTube goes through it.
-- **Radio**: **Instant Mix** on an artist, album or song (and the **Radio** folder in channel
-  views that show folders) mixes the artist's top tracks with those of similar artists, as [ListenBrainz](https://listenbrainz.org) listeners play them
-  (the artist is found on [MusicBrainz](https://musicbrainz.org) by the ISRC of one of its
-  songs). Music apps get the same mix as "similar songs" or instant mix, and the similar
-  artists on the artist page. For artists ListenBrainz does not know, a free Last.fm API key in
-  the settings adds Last.fm's similar artists.
-- **Save to library**: set a **Music library folder** in the settings and every album you star
-  (a heart in Jellyfin, a star in a music app) is saved there as FLAC with its cover, as
-  `Artist/Album (Year)/01 Title.flac`, tagged with that album even when the catalog's file names another. Add that folder to a Jellyfin music library and the
-  albums play offline and in any Jellyfin music app, Finamp included. Saving is slow on purpose,
-  one song every 20 seconds, so the catalog does not block the server. Existing files are never
-  replaced, and unstarring an album stops its save but keeps what was already saved.
-- **Search**: Jellyfin's normal search also looks in the online catalogs, so it finds
-  titles nobody has browsed yet. Found titles stay under each channel's Search results.
-- **Access**: only the users ticked in the settings see the channels.
+- **Browse** — Popular movies, Popular TV and Trending from TMDB.
+- **Play** — movies start directly, shows open into seasons and episodes; streams come from FlixHQ.
+- **Key** — the channel stays hidden until a free TMDB API key is saved. The short API key and the long read access token both work.
 
-| Source | Finds the show by | Subtitles |
-|---|---|---|
-| HiAnime | MyAnimeList ID, no title guessing | Separate English track |
-| AnimeGG | Title search | Burned in |
-| AnimeHeaven | Title search | Burned in |
-| FlixHQ (movies and TV) | Title and year | Usually a separate English track |
-| Monochrome (music) | Its own catalog IDs, with ISRCs | Not applicable |
-| Deezer (music catalog, when Monochrome cannot) | Its own IDs, with ISRCs; songs play from Monochrome by ISRC, or from YouTube | Not applicable |
-| YouTube (music, when Monochrome cannot) | Artist and title, same length within 3 s, the artist's own upload first | Not applicable |
+### Music
 
-If a source fails or is missing an episode, go back and pick another one. The message says
-which it was: HiAnime, for one, tells an episode it does not have apart from a change on its site.
+- **Lossless** — FLAC from [Monochrome](https://github.com/monochrome-music/monochrome)'s catalog: CD quality, 24-bit on some albums, streamed as-is. Only a Subsonic app that asks for a lower bit rate gets a converted file.
+- **Browsing** — real album pages with numbered tracks, artist pages with top tracks, albums and singles, **Starred**, **Recently played**, and synced lyrics from [LRCLIB](https://lrclib.net).
+- **Radio** — **Instant Mix** on an artist, album or song mixes top tracks with similar artists, as [ListenBrainz](https://listenbrainz.org) listeners play them. A free Last.fm key fills the gaps.
+- **Cache** — played songs stay on the server (4 GB by default, 0 turns it off) for instant skips and replays. The next song in the queue or album can be fetched while one plays.
+- **Save to library** — starred albums are saved as tagged FLAC (`Artist/Album (Year)/01 Title.flac`) into a folder you add as a normal music library.
+- **Catalog fallback** — when Monochrome is slow or down, searches and album/artist pages come from [Deezer](https://www.deezer.com) (metadata only, no audio). Songs then play from Monochrome by ISRC, or from YouTube.
+- **YouTube fallback** — off by default. A song the catalog cannot send plays as AAC at about 128 kbps via yt-dlp. Favourites are upgraded to FLAC in the background once the catalog is back. A proxy setting covers servers YouTube blocks.
+
+### Manga
+
+- **Sources** — 90 in the built-in catalog, 7 on by default. Each source has its own pacing, priority, download limit and a test button.
+- **Search & request** — search every enabled source, request a series, and monitor it for new chapters.
+- **Downloads** — CBZ archives into a folder your Jellyfin manga or books library reads. Optional AVIF conversion, a 50 GiB storage budget by default, retry/pause/cancel.
+- **Reader** — a manga button in the Jellyfin header (needs the File Transformation plugin), plus the full reader from the settings page. Progress and bookmarks are per user.
+- **Metadata** — an optional ComicVine key adds publisher, year, credits and summary to `ComicInfo.xml`.
+
+### Everywhere
+
+- **Jellyfin search** — online results appear beside library results, tagged `Streamable` and `StreamFin`.
+- **Layout** — separate channels, one hub, or both; an optional **Stream online** entry inside a local library.
+- **Access** — nobody sees anything until ticked; an app password alone grants nothing.
+- **Subsonic** — the music channel speaks OpenSubsonic, for Symfonium, Feishin, Tempo and friends.
 
 ## Install
 
-Needs Jellyfin **12.3** or newer.
+**Jellyfin 12.3 or newer.**
 
-1. In Jellyfin, open **Dashboard > Plugins > Repositories** and add this one:
+1. Add the repository under **Dashboard › Plugins › Repositories**:
    ```
    https://github.com/ItzDabbzz/jellyfin-plugin-streamfin/releases/latest/download/manifest.json
    ```
-2. Install **StreamFin** from the catalog (it is under Channels) and restart Jellyfin.
-3. Open **Dashboard > Plugins > StreamFin**, turn it on, and tick the users who are
-   allowed in. Nobody is by default.
-4. For Movies & TV, make a free account on themoviedb.org, go to **Settings > API**, and
-   paste the key. The short API key and the long read access token both work.
+2. Install **StreamFin** from the catalog (under **Channels**), then restart Jellyfin.
+3. Open **Dashboard › Plugins › StreamFin**, turn it on, and tick the users allowed in.
+4. For **Movies & TV**, paste a free [TMDB API key](https://www.themoviedb.org/settings/api).
+5. Add any of the extras below.
 
-The channels then show up on the home screen and in the sidebar, next to the libraries.
-If one is missing, check that your user is ticked and the TMDB key is saved, then reload
-the app. Music needs no key. Under **Music catalog address** you can point it at another
-instance of the same catalog API. Updates come through the same repository like any other plugin.
+| Optional | Adds |
+|---|---|
+| TMDB API key | Movies & TV — required for that channel |
+| [File Transformation](https://github.com/IAmParadox27/jellyfin-plugin-file-transformation) | Manga button in the Jellyfin header |
+| FFmpeg with libaom-av1 | AVIF manga pages (smaller files) |
+| ComicVine API key | Manga publisher, year, credits, summary |
+| Last.fm API key | Similar artists when ListenBrainz has none |
 
-The web app's sidebar gives channels a generic icon. For the shuriken, the popcorn and the note,
-make an API key under **Dashboard > API Keys** and run this from a clone of the repo:
+The channels appear on the home screen and in the sidebar. If one is missing, check that your user is ticked and the TMDB key is saved, then reload the app.
+
+<details>
+<summary><b>Channel icons in the web app</b></summary>
+
+The web app gives channels a generic icon. Make an API key under **Dashboard › API Keys**, then run this from a clone:
 
 ```sh
-JELLYFIN_TOKEN=<key> python3 scripts/web-icon.py --url https://your.jellyfin --channel Anime
-JELLYFIN_TOKEN=<key> python3 scripts/web-icon.py --url https://your.jellyfin --channel "Movies & TV"
-JELLYFIN_TOKEN=<key> python3 scripts/web-icon.py --url https://your.jellyfin --channel Music
+JELLYFIN_TOKEN=... python3 scripts/web-icon.py --url https://your.jellyfin --channel Anime
+JELLYFIN_TOKEN=... python3 scripts/web-icon.py --url https://your.jellyfin --channel "Movies & TV"
+JELLYFIN_TOKEN=... python3 scripts/web-icon.py --url https://your.jellyfin --channel Music
 ```
 
-In the web app, found artists are under the Music channel's Search results rather than
-in the search page's Artists row, which only lists the local library.
+</details>
 
-### Music apps (Subsonic)
+## Settings
 
-Music also speaks OpenSubsonic, so apps like Symfonium, Feishin, Tempo or play:Sub get
-gapless playback, queues, offline downloads and synced lyrics. Under **Subsonic apps** in
-the settings, turn on the API and press **New password** next to a user. In the app, pick
-Subsonic or OpenSubsonic and enter:
+Everything lives on one page, in six sections:
 
-- **Server**: your Jellyfin address followed by `/StreamFin`, for example
-  `https://your.jellyfin/StreamFin`
-- **Username**: the Jellyfin username
-- **Password**: the app password from the settings, not the Jellyfin one
+| Section | Controls |
+|---|---|
+| **Navigation** | Channels, hub or both · hub name · Stream online rows · online results in Jellyfin search |
+| **Sources** | Anime providers and fallback · adult/ecchi filters · TMDB key · music source order, live state, Test now |
+| **Playback & cache** | Song cache size · next-song prefetch · catalog cache lifetime · favourites folder |
+| **Manga** | Storage folder and Jellyfin library · ComicVine key · storage budget · check interval · AVIF · concurrency · per-source pacing |
+| **User access** | One card per user: access and Subsonic app passwords |
+| **Maintenance** | Clear caches · warm catalogs · update YouTube tools |
 
-The catalog has no list of everything, so the library an app syncs is yours: what you played,
-starred or put in a playlist, plus every album of the artists you starred or keep
-playing. Ratings, play counts and the play queue are saved on the server, so another device
-picks up where you stopped.
+## Subsonic apps
 
-Subsonic apps put their credentials in the address of every request, as Jellyfin's own
-apps do with their tokens, so they can show up in Jellyfin's log and in reverse proxy logs.
-Keep those logs private. If an app password may have leaked, press **New password** to
-revoke it.
+Music also speaks OpenSubsonic, so apps like Symfonium, Feishin, Tempo or play:Sub get gapless playback, queues, offline downloads and synced lyrics.
+
+In the settings under **User access › Subsonic apps**, turn the API on and press **New password** next to a user. In the app, pick Subsonic or OpenSubsonic and enter:
+
+| Field | Value |
+|---|---|
+| Server | `https://your.jellyfin/StreamFin` |
+| Username | the Jellyfin username |
+| Password | the app password, not the Jellyfin one |
+
+The catalog has no list of everything, so the library an app syncs is yours: what you played, starred or put in a playlist, plus every album of the artists you star or keep playing. Ratings, play counts and the play queue live on the server, so another device picks up where you stopped.
+
+App passwords travel in the request address, like Jellyfin's own tokens, so they can show up in Jellyfin and reverse-proxy logs. Keep those private; **New password** revokes the old one.
 
 ## How it works
 
-The catalogs and the video are separate. AniList and TMDB provide titles, posters and
-episode lists. The sources only have to turn "this episode" into a video URL.
+- **Catalogs and sources are separate.** AniList, TMDB and Monochrome supply titles, posters and episode lists. A source only has to turn "this episode" into a video URL.
+- **Jellyfin never sees that URL.** It gets a loopback address into the plugin with a one-off ticket. MP4 streams as byte ranges, and HLS playlists are rewritten so every segment points back at the relay.
+- **Music takes the short path.** One FLAC per track with byte ranges, so Jellyfin plays the bytes unchanged, with seeking and no transcode.
+- **Fallbacks are ordered.** A slow search can go to the next source. After repeated failures the catalog is skipped for a while, and what it already answered comes from disk. YouTube is last, and off until you turn it on.
+- **The relay is not a general proxy.** It accepts only its own tickets, only from loopback, and only public destinations. Nothing from the sites is run — except YouTube's player code in deno, only when the fallback is on.
+- **The YouTube tools are checked.** yt-dlp and deno come from their official releases, verified against the published SHA-256, and update daily. Set your own paths if you prefer; use the glibc builds on Alpine.
 
-Jellyfin never sees that URL. It gets a loopback address into the plugin with a one-off
-ticket, and the plugin fetches the video from the site. MP4 is streamed as byte ranges, and
-the link is only looked up again if it expires. HLS gets its playlist rewritten so every
-segment points back at the relay, which means FFmpeg only ever talks to localhost.
+## Build
 
-Music takes the short path through the same relay. The catalog serves each track as one
-FLAC file with byte ranges, so the plugin offers it for direct play. Jellyfin's own static
-stream fetches it through the relay and hands the bytes to the player unchanged, with
-seeking. A transcode would follow whatever the client asks for, which is usually AAC or
-MP3, so the plugin avoids one.
-
-When the catalog takes longer than 6 seconds to search, the search goes to Deezer instead, and the
-same words keep getting Deezer's results for half an hour, so paging through them stays steady.
-Deezer's songs, albums and artists carry their own IDs (`dz` and a number), so nothing stored
-under a catalog ID changes. To play one, the plugin searches the catalog for the same ISRC (or
-the same title, artist and length) and streams that FLAC.
-
-When the catalog does not answer within 20 seconds and the YouTube fallback is on, the plugin
-asks [yt-dlp](https://github.com/yt-dlp/yt-dlp) for the song instead. yt-dlp needs
-[deno](https://deno.com) to read YouTube's player code. The plugin downloads both from their
-official GitHub releases into its own data folder. It checks each file against the SHA-256
-published in the same release and never runs a file that does not match. A scheduled task,
-**Update YouTube tools**, updates them daily. If you would rather install them yourself, set
-their paths in the settings. yt-dlp downloads the song itself into the song cache, and it plays
-from there. Behind a proxy, the audio address YouTube hands out only works inside the yt-dlp run
-that asked for it, so nothing else could fetch it. A new song from YouTube takes 15 to 20
-seconds to start; after that it plays from disk. yt-dlp comes as its unpacked build, which
-starts twice as fast as the single file. The zip is checked before it is unpacked, and every
-file in it has to stay inside its folder.
-
-The catalog goes down for minutes at a time, and on a bad day it comes back for two minutes
-and goes again. Three failures within two minutes, or three answers slower than 8 seconds (5
-for audio), count it as down. From then on no click waits on it: new songs go straight to
-YouTube, and anything seen before comes from the copies the plugin keeps. In the background the
-plugin checks it again, after 30 seconds at first and then after longer pauses, up to 15
-minutes. It is used again only after three quick answers in a row, 20 seconds apart. It is
-also checked once when Jellyfin starts, so a server that comes up during an outage knows at once.
-
-The settings have two ordered lists. **Play songs from** decides where a new song comes from,
-and **Find music with** where searches go first. The first source in each list that works wins,
-and the arrows change the order. Each source has its own switch, its live state, and Monochrome
-and YouTube have a **Test now** button. With YouTube first, a new song plays from YouTube and
-Monochrome is only asked when YouTube does not have it. Switching Monochrome off stops songs
-playing from it, while its catalog still answers searches and albums.
-
-The relay is not a general proxy. It only accepts its own tickets, only from loopback, and
-every outgoing request has to land on a public address. Nothing from the sites is ever run,
-with one exception: when the YouTube fallback is on, yt-dlp runs YouTube's player code in
-deno to find the audio address. yt-dlp makes its own requests to YouTube, so those skip the
-plugin's address checks. With a YouTube proxy set, every yt-dlp request goes through it, and its
-password never appears in a log or message. The checksums come from the same GitHub release as the files, so they
-catch a broken or swapped download, but they do not prove who built it. Turning the fallback on
-means running each new yt-dlp and deno release as the Jellyfin user, a day after it comes out at
-most. The downloads are the glibc builds, which suit the official Jellyfin image; on Alpine, set
-the paths to your own.
-
-## Building it
-
-Needs Docker, Python 3 and Bash, no local .NET:
+Needs Docker, Python 3 and Bash — no local .NET:
 
 ```sh
 bash scripts/fetch-references.sh
@@ -227,23 +161,36 @@ bash scripts/build.sh
 
 That runs the tests and writes the plugin zip to `artifacts/`.
 
-CI does the same on every push, plus CodeQL, a secret scan over the whole history and a
-lint of the workflows. Every Monday it also loads the plugin on the newest Jellyfin, so a
-breaking release shows up before a server updates into it. Everything that parses a
-third-party page is fuzzed on every pull request and for an hour every Sunday.
+CI does the same on every push, plus CodeQL, a secret scan over the whole history and a workflow lint. Every Monday it loads the plugin on the newest Jellyfin, and every third-party parser is fuzzed on each pull request.
+
+### Bump a version
+
+The version lives in one place: `<Version>` in `src/StreamFin.csproj`. Bump it, commit, then tag the commit with the same version prefixed by `v`. Pushing the tag publishes the release.
+
+```sh
+# 1. set <Version>0.12.0.9</Version> in src/StreamFin.csproj
+git add src/StreamFin.csproj
+git commit -m "chore: bump version to 0.12.0.9"
+
+# 2. annotated tag - its body becomes the release notes and the manifest changelog
+git tag -a v0.12.0.9 -m "StreamFin 0.12.0.9" -m "- fix: ..." -m "- feat: ..."
+
+# 3. publish
+git push origin main
+git push origin v0.12.0.9
+```
+
+The release workflow rejects a tag that does not match the csproj version. On a match it runs the release checks and the tests, builds the zip, signs its provenance, appends the version to `manifest.json` (starting from the previous release's copy) and publishes the GitHub release. Do not edit or commit `manifest.json` by hand, and do not push a `v*` tag you do not want released.
+
+## Why this fork
+
+Upstream is [mmrmagno/StreamFin](https://github.com/mmrmagno/jellyfin-plugin-streamfin). This fork reorganizes the source layer for easier maintenance and adds manga — downloading, managing and reading it next to the streaming channels.
 
 ## Credits
 
-The AnimeGG and AnimeHeaven adapters are adapted from the MIT-licensed
-[Seanime providers](https://github.com/Seanime-contributions/Seanime-Providers). The
-HiAnime flow follows what [ani-cli](https://github.com/pystardust/ani-cli) does, written
-from scratch. FlixHQ is a port of my own downloader. Icons are from Material Design Icons.
-Details in `THIRD_PARTY_NOTICES.txt`.
+The AnimeGG and AnimeHeaven adapters are adapted from the MIT-licensed [Seanime providers](https://github.com/Seanime-contributions/Seanime-Providers). The HiAnime flow follows [ani-cli](https://github.com/pystardust/ani-cli), written from scratch. FlixHQ is a port of my (mmrmagno) own downloader. Icons are from Material Design Icons. Details in [`THIRD_PARTY_NOTICES.txt`](THIRD_PARTY_NOTICES.txt).
 
-StreamFin does not host anything. It plays what third-party sites already serve, and
-whether that is legal where you live is on you.
-
-I write about my projects at [marc-os.com](https://marc-os.com).
+StreamFin hosts nothing. It plays what third-party sites already serve, and whether that is legal where you live is on you.
 
 ## License
 
