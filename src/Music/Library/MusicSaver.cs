@@ -158,13 +158,41 @@ public sealed class MusicSaver(SafeHttp http, MusicCatalog catalog, MusicLibrary
         }
     }
 
+    private async Task ToggleTrackAsync(Guid user, string releaseId, string trackId, bool favourite)
+    {
+        try
+        {
+            var starred = (await store.ReadAsync(user, default)).StarredTracks.Any(s => s.Track.Id == trackId);
+            if (favourite == starred) return;
+            if (!favourite)
+            {
+                await store.UpdateAsync(user, l => l.StarredTracks.RemoveAll(s => s.Track.Id == trackId), default);
+                return;
+            }
+            var release = await catalog.ReleaseAsync(releaseId, default);
+            var track = release.Tracks.FirstOrDefault(t => t.Id == trackId) ?? throw new ProviderException("This track is unavailable.");
+            await store.UpdateAsync(user, l => l.StarredTracks.Insert(0,
+                new MusicPlay(track with { Artwork = track.Artwork ?? release.Artwork }, release.Title, DateTime.UtcNow)), default);
+        }
+        catch (Exception ex) when (ex is ProviderException or HttpRequestException or IOException or UnauthorizedAccessException or System.Text.Json.JsonException or TaskCanceledException)
+        {
+            logger.LogWarning("StreamFin could not star a track from a favourite ({ErrorType})", ex.GetType().Name);
+        }
+    }
+
     // A heart on a channel album in Jellyfin is the same as a star in a Subsonic app.
     private void OnUserDataSaved(object? sender, UserDataSaveEventArgs e)
     {
         if (e.SaveReason is not (UserDataSaveReason.UpdateUserRating or UserDataSaveReason.UpdateUserData) || e.Item is not { } item || e.UserData is not { } data
-            || item.ChannelId != library.GetNewItemId("Channel " + MusicChannel.ChannelName, typeof(Channel))
-            || item.ExternalId?.Split('/') is not ["album", _, var releaseId] || !MusicCatalog.IsId(releaseId) || !Plugin.Allows(e.UserId)) return;
+            || item.ChannelId != library.GetNewItemId("Channel " + MusicChannel.ChannelName, typeof(Channel)) || !Plugin.Allows(e.UserId)) return;
+        var parts = item.ExternalId?.Split('/');
         var (user, favourite) = (e.UserId, data.IsFavorite);
+        if (parts is ["track", _, var trackRelease, var trackId] && MusicCatalog.IsId(trackRelease) && MusicCatalog.IsId(trackId))
+        {
+            _ = Task.Run(() => ToggleTrackAsync(user, trackRelease, trackId, favourite));
+            return;
+        }
+        if (parts is not ["album", _, var releaseId] || !MusicCatalog.IsId(releaseId)) return;
         _ = Task.Run(async () =>
         {
             try

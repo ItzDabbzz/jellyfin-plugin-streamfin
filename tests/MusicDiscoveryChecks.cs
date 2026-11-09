@@ -9,11 +9,11 @@ internal static class MusicDiscoveryChecks
         var rootMethod = typeof(MusicChannel).GetMethod("RootItems", BindingFlags.Public | BindingFlags.Static);
         Check(rootMethod is not null, "music root exposes browseable discovery categories");
         var enabled = ((IEnumerable<ChannelItemInfo>)rootMethod!.Invoke(null, [true])!).ToArray();
-        Check(enabled.Select(item => item.Id).SequenceEqual(["popular/artists", "popular/albums", "popular/songs", "search", "starred", "recent"]),
-            "music discovery leads with popular artists, albums and songs without changing existing root IDs");
+        Check(enabled.Select(item => item.Id).SequenceEqual(["popular/artists", "popular/albums", "popular/songs", "starred", "recent"]),
+            "music discovery leads with popular artists, albums and songs");
         var disabled = ((IEnumerable<ChannelItemInfo>)rootMethod.Invoke(null, [false])!).ToArray();
-        Check(disabled.Select(item => item.Id).SequenceEqual(["search", "starred", "recent"]), "disabled Deezer creates no dead discovery folders");
-        Check(enabled.First(item => item.Id == "search").Overview.Contains("magnifying glass", StringComparison.Ordinal), "music search explains the real Jellyfin search entry point");
+        Check(disabled.Select(item => item.Id).SequenceEqual(["starred", "recent"]), "disabled Deezer creates no dead discovery folders");
+        Check(enabled.All(item => item.Id != "search"), "music root does not expose search results");
 
         var parser = typeof(Deezer).GetMethod("ParseChart", BindingFlags.Public | BindingFlags.Static);
         Check(parser is not null, "music discovery has a chart response parser");
