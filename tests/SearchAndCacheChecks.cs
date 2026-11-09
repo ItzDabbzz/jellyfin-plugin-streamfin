@@ -1,4 +1,5 @@
 using Jellyfin.Data.Enums;
+using MediaBrowser.Controller.Library;
 using StreamFin;
 
 internal static class SearchAndCacheChecks
@@ -14,6 +15,10 @@ internal static class SearchAndCacheChecks
         Check(StreamableSearch.IsEnabled(new Configuration { SearchResultsEnabled = false }) == false
             && StreamableSearch.IsEnabled(new Configuration()) && StreamableSearch.IsEnabled(null),
             "the search toggle turns online results off without touching the channels");
+        Check(new[] { typeof(OnlineSearch), typeof(FilmSearch), typeof(MusicSearch) }
+                .All(provider => typeof(IExternalSearchProvider).IsAssignableFrom(provider)
+                    && !typeof(IInternalSearchProvider).IsAssignableFrom(provider)),
+            "online results coexist with external search providers");
         Check(CatalogBrowser.Kinds(false, [], [BaseItemKind.Movie, BaseItemKind.Episode, BaseItemKind.TvChannel]).Length == 0,
             "a Videos row that excludes movies gets no online titles");
         Check(CatalogBrowser.Kinds(false, [BaseItemKind.LiveTvProgram], []).Length == 0,

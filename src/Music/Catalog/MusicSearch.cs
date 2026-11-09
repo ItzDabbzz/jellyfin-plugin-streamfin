@@ -12,7 +12,7 @@ using Microsoft.Extensions.Logging;
 namespace StreamFin;
 
 public sealed class MusicSearch(MusicCatalog catalog, ILibraryManager library, SearchHistory history, IHttpContextAccessor contexts,
-    IAuthorizationContext authorization, ILogger<MusicSearch> logger) : IInternalSearchProvider
+    IAuthorizationContext authorization, ILogger<MusicSearch> logger) : IExternalSearchProvider
 {
     // Jellyfin derives channel item IDs from external ID + channel name + "16".
     public const string FolderKey = "search" + MusicChannel.ChannelName + "16";
@@ -27,6 +27,9 @@ public sealed class MusicSearch(MusicCatalog catalog, ILibraryManager library, S
         && (Wants(query, BaseItemKind.MusicArtist) || Wants(query, BaseItemKind.MusicAlbum) || Wants(query, BaseItemKind.Audio))
         && (query.MediaTypes.Length == 0 || query.MediaTypes.Contains(MediaType.Audio))
         && (!query.ParentId.HasValue || query.ParentId == Guid.Empty || query.ParentId == ChannelId || query.ParentId == SearchFolderId);
+
+    IAsyncEnumerable<SearchResult> IExternalSearchProvider.SearchAsync(SearchProviderQuery query, CancellationToken ct)
+        => StreamableSearch.ExternalResults(SearchAsync(query, ct), ct);
 
     // The Search results folder, made on first use. Callers hold ChannelNavigation.Gate.
     public static Folder Folder(ILibraryManager library, Channel channel)

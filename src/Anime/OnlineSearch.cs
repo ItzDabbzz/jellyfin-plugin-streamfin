@@ -11,10 +11,10 @@ using Microsoft.Extensions.Logging;
 
 namespace StreamFin;
 
-// Register alongside the internal providers so results merge with the local library.
-// Jellyfin's external-provider path replaces local results whenever it finds a match.
+// Register as an external provider so Jellyfin merges these results with other external search engines.
+// Jellyfin uses the internal SQL provider only when all external providers return no matches.
 public sealed class OnlineSearch(AniListCatalog catalog, ILibraryManager library, SearchHistory history, IHttpContextAccessor contexts,
-    IAuthorizationContext authorization, ILogger<OnlineSearch> logger) : IInternalSearchProvider
+    IAuthorizationContext authorization, ILogger<OnlineSearch> logger) : IExternalSearchProvider
 {
     public string Name => "JellySteamHub";
     public MetadataPluginType Type => MetadataPluginType.SearchProvider;
@@ -25,6 +25,9 @@ public sealed class OnlineSearch(AniListCatalog catalog, ILibraryManager library
         && (query.IncludeItemTypes.Length == 0 ? !query.ExcludeItemTypes.Contains(BaseItemKind.Series) : query.IncludeItemTypes.Contains(BaseItemKind.Series))
         && (query.MediaTypes.Length == 0 || query.MediaTypes.Contains(MediaType.Video))
         && (!query.ParentId.HasValue || query.ParentId == Guid.Empty || query.ParentId == ChannelId || query.ParentId == SearchFolderId);
+
+    IAsyncEnumerable<SearchResult> IExternalSearchProvider.SearchAsync(SearchProviderQuery query, CancellationToken ct)
+        => StreamableSearch.ExternalResults(SearchAsync(query, ct), ct);
 
     public async Task<IReadOnlyList<SearchResult>> SearchAsync(SearchProviderQuery query, CancellationToken ct)
     {

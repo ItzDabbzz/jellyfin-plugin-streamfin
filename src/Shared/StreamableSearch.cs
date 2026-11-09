@@ -1,3 +1,6 @@
+using System.Runtime.CompilerServices;
+using MediaBrowser.Controller.Library;
+
 namespace StreamFin;
 
 // Found titles are tagged so a client can tell an online, instantly playable result from a local file. The tag is
@@ -10,6 +13,16 @@ public static class StreamableSearch
     // Off means Jellyfin's search stops asking StreamFin; the channels and their saved results stay as they are.
     public static bool Enabled => IsEnabled(Plugin.Instance?.Configuration);
     public static bool IsEnabled(Configuration? config) => config?.SearchResultsEnabled != false;
+
+    public static async IAsyncEnumerable<SearchResult> ExternalResults(Task<IReadOnlyList<SearchResult>> search,
+        [EnumeratorCancellation] CancellationToken ct)
+    {
+        foreach (var result in await search.ConfigureAwait(false))
+        {
+            ct.ThrowIfCancellationRequested();
+            yield return result;
+        }
+    }
 
     public static string[] Mark(IEnumerable<string>? tags) => (tags ?? [])
         .Where(tag => tag != SearchHistory.HiddenTag && tag != PluginTag && tag != Tag)

@@ -313,7 +313,8 @@ Check(deezerArtist.TopTracks.Single().Artists.Select(a => a.Name).SequenceEqual(
     && deezerArtist.Releases.All(r => r.Artists.Single().Id == "dz27") && deezerArtist.Releases[1].Type == "SINGLE", "Deezer artist page: top tracks credit everyone, albums credit the artist");
 Reject(() => Deezer.ParseArtist("""{"artist":{"id":"27","name":"x"}}"""), "Deezer artist without a numeric ID is rejected");
 Reject(() => Deezer.ParseRelease("[]"), "Deezer release must be an object");
-Check(MusicPaths.Album("/music", deezerRelease with { Id = "dz7" }, edition: true).EndsWith("Discovery (2001) [dz7]", StringComparison.Ordinal), "a short Deezer album ID still names a second edition");
+var musicRoot = Path.Combine(Path.GetTempPath(), "streamfin-music");
+Check(MusicPaths.Album(musicRoot, deezerRelease with { Id = "dz7" }, edition: true).EndsWith("Discovery (2001) [dz7]", StringComparison.Ordinal), "a short Deezer album ID still names a second edition");
 Deezer.Check("""{"data":[]}""");
 Check(Throws(() => Deezer.Check("""{"error":{"type":"Exception","message":"Quota limit exceeded","code":4}}""")) is RateLimitedException
     && Throws(() => Deezer.Check("""{"error":{"code":800}}""")) is SourceStatusException { Status: 404 }
@@ -824,17 +825,19 @@ foreach (var (text, part) in new[] { (".. .", "_"), (". .", "_"), ("..", "_"), (
     Check(MusicPaths.Part(text) == part, "music path part " + text.Replace("\0", "NUL"));
 Check(MusicPaths.Part(new string('é', 200)).Length == 80 && System.Text.Encoding.UTF8.GetByteCount(MusicPaths.Part(string.Concat(Enumerable.Repeat("😀", 100)))) <= 180
     && !char.IsHighSurrogate(MusicPaths.Part(string.Concat(Enumerable.Repeat("😀", 100)))[^1]), "music path parts stay short in characters and bytes without splitting a character");
-Check(MusicPaths.Root("") is null && MusicPaths.Root("relative/music") is null && MusicPaths.Root("/srv/music/") == "/srv/music" && MusicPaths.Root("/srv/x/../music") == "/srv/music",
+Check(MusicPaths.Root("") is null && MusicPaths.Root("relative/music") is null && MusicPaths.Root(musicRoot + Path.DirectorySeparatorChar) == musicRoot
+    && MusicPaths.Root(Path.Combine(Path.GetTempPath(), "x", "..", "streamfin-music")) == musicRoot,
     "the music library folder must be absolute and is normalised");
 var savedAlbum = new MusicRelease("155102851176075264", "OK Computer", [new("155102851176075265", "Radiohead")], "ALBUM", new DateTime(1997, 7, 1), null, null, 12, []);
-var albumFolder = MusicPaths.Album("/srv/music", savedAlbum);
-Check(albumFolder == "/srv/music/Radiohead/OK Computer (1997)", "saved albums go under artist and album with the year");
-Check(MusicPaths.Album("/srv/music", savedAlbum, edition: true) == "/srv/music/Radiohead/OK Computer (1997) [075264]", "a second edition of an album gets its own folder");
-Check(MusicPaths.Album("/srv/music", savedAlbum with { Title = "..", Artists = [new("155102851176075265", "..")] }) == "/srv/music/_/.. (1997)" && MusicPaths.Album("/srv/music", savedAlbum with { Title = "..", Date = null }) == "/srv/music/Radiohead/_"
-    && MusicPaths.Album("/srv/music", savedAlbum with { Date = null, Artists = [] }) == "/srv/music/Unknown artist/OK Computer", "album folders cannot climb out of the library folder");
+var albumFolder = MusicPaths.Album(musicRoot, savedAlbum);
+Check(albumFolder == Path.Combine(musicRoot, "Radiohead", "OK Computer (1997)"), "saved albums go under artist and album with the year");
+Check(MusicPaths.Album(musicRoot, savedAlbum, edition: true) == Path.Combine(musicRoot, "Radiohead", "OK Computer (1997) [075264]"), "a second edition of an album gets its own folder");
+Check(MusicPaths.Album(musicRoot, savedAlbum with { Title = "..", Artists = [new("155102851176075265", "..")] }) == Path.Combine(musicRoot, "_", ".. (1997)")
+    && MusicPaths.Album(musicRoot, savedAlbum with { Title = "..", Date = null }) == Path.Combine(musicRoot, "Radiohead", "_")
+    && MusicPaths.Album(musicRoot, savedAlbum with { Date = null, Artists = [] }) == Path.Combine(musicRoot, "Unknown artist", "OK Computer"), "album folders cannot climb out of the library folder");
 var savedTrack = musicSearch.Tracks[0] with { Title = "Paranoid Android", Number = 2, Disc = 1 };
-Check(MusicPaths.Track(albumFolder, savedTrack, false) == albumFolder + "/02 Paranoid Android.flac"
-    && MusicPaths.Track(albumFolder, savedTrack with { Disc = 2, Title = "../x" }, true) == albumFolder + "/2-02 .._x.flac", "saved songs are numbered, with the disc when there are several");
+Check(MusicPaths.Track(albumFolder, savedTrack, false) == Path.Combine(albumFolder, "02 Paranoid Android.flac")
+    && MusicPaths.Track(albumFolder, savedTrack with { Disc = 2, Title = "../x" }, true) == Path.Combine(albumFolder, "2-02 .._x.flac"), "saved songs are numbered, with the disc when there are several");
 
 if (args.Contains("--provider-live"))
 {

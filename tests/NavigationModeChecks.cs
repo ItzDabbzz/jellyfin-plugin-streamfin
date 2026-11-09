@@ -12,9 +12,9 @@ internal static class NavigationModeChecks
         }
         Check(new Configuration().StreamingNavigationMode == "Channels", "existing installs retain channel navigation by default");
         Check(HubChannel.NormalizeDisplayName("  Online media  ") == "Online media"
-            && new string?[] { null, "", "   " }.All(name => HubChannel.NormalizeDisplayName(name) == "StreamFin"),
+            && new string?[] { null, "", "   " }.All(name => HubChannel.NormalizeDisplayName(name) == "JellySteamHub"),
             "custom hub names trim whitespace and empty names retain the default");
-        Check(new HubChannel().Name == "StreamFin", "hub identity stays stable independently of its display name");
+        Check(new HubChannel().Name == "JellySteamHub", "hub identity stays stable independently of its display name");
         Check(!SearchHistory.HasVisibleResults([]), "empty search history does not show a Search results folder");
         var found = new MediaBrowser.Controller.Entities.TV.Series { ExternalId = "title/search/1", Tags = [] };
         Check(SearchHistory.HasVisibleResults([found]), "Search results becomes visible after a title is found");

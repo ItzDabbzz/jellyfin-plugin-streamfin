@@ -13,7 +13,7 @@ using Microsoft.Extensions.Logging;
 namespace StreamFin;
 
 public sealed class FilmSearch(TmdbCatalog catalog, ILibraryManager library, SearchHistory history, IHttpContextAccessor contexts,
-    IAuthorizationContext authorization, ILogger<FilmSearch> logger) : IInternalSearchProvider
+    IAuthorizationContext authorization, ILogger<FilmSearch> logger) : IExternalSearchProvider
 {
     // Jellyfin derives channel item IDs from external ID + channel name + "16".
     public const string FolderKey = "search" + FilmChannel.ChannelName + "16";
@@ -28,6 +28,9 @@ public sealed class FilmSearch(TmdbCatalog catalog, ILibraryManager library, Sea
         && (Wants(query, BaseItemKind.Movie) || Wants(query, BaseItemKind.Series))
         && (query.MediaTypes.Length == 0 || query.MediaTypes.Contains(MediaType.Video))
         && (!query.ParentId.HasValue || query.ParentId == Guid.Empty || query.ParentId == ChannelId || query.ParentId == SearchFolderId);
+
+    IAsyncEnumerable<SearchResult> IExternalSearchProvider.SearchAsync(SearchProviderQuery query, CancellationToken ct)
+        => StreamableSearch.ExternalResults(SearchAsync(query, ct), ct);
 
     public async Task<IReadOnlyList<SearchResult>> SearchAsync(SearchProviderQuery query, CancellationToken ct)
     {
