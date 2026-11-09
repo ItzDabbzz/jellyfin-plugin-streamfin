@@ -4,7 +4,7 @@
 @media(max-width:700px){#jm-app .jm-header{gap:10px;padding:10px 14px}#jm-app .jm-nav{order:3;flex-basis:100%;font-size:13px}#jm-app .jm-header>.jm-close{margin-left:auto}#jm-app .jm-main{padding-top:25px}#jm-app .jm-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}#jm-app .jm-card{padding:14px}#jm-app .jm-card h3{font-size:16px}#jm-app .jm-card button{width:100%;padding:8px}#jm-app .jm-row{align-items:flex-start;flex-direction:column}#jm-app .jm-panel{padding:16px}#jm-app .jm-reader-toolbar{font-size:12px;gap:5px}#jm-app .jm-reader-toolbar button{padding:7px 10px}#jm-app .jm-reader-pages.jm-double img{max-width:100%}#jm-app .jm-reader-pages.jm-double img+img{display:none}}
 @media(prefers-reduced-motion:no-preference){#jm-app .jm-card{transition:border-color .15s,transform .15s}#jm-app .jm-card:hover{border-color:#637046;transform:translateY(-2px)}}
 
-#jm-app.jm-embedded{position:relative;inset:auto;z-index:auto;min-height:70vh;border-radius:12px;margin:0 1em 2em} .jm-header-icon{display:inline-flex!important;align-items:center;justify-content:center;width:44px;height:44px;flex-shrink:0} .jm-header-icon img{display:block;width:27px;height:27px;object-fit:contain;border-radius:7px} #jm-app.jm-embedded .jm-main{padding-top:25px}
+#jm-app.jm-embedded{position:relative;inset:auto;z-index:auto;min-height:70vh;border-radius:12px;margin:0 1em 2em} .jm-header-icon.paper-icon-button-light{display:inline-flex!important;align-items:center;justify-content:center;width:44px;height:44px;flex-shrink:0} .jm-header-icon img{display:block;width:27px;height:27px;object-fit:contain;border-radius:7px} #jm-app.jm-embedded .jm-main{padding-top:25px}
 
 #jm-app.jm-embedded{margin:4em 0 2em} #jm-app .jm-folder-path{display:block;padding:12px;background:#121722;border:1px solid var(--jm-line);border-radius:8px;overflow-wrap:anywhere;color:#f5f6fa} #jm-app .jm-directory-picker{background:var(--jm-panel);color:#f5f6fa;border:1px solid var(--jm-line);border-radius:14px;padding:24px;width:min(640px,94vw);max-height:85vh;overflow:auto} #jm-app .jm-directory-picker::backdrop{background:#000a} #jm-app .jm-directory-picker>.jm-actions{margin:12px 0} #jm-app .jm-directory-list{max-height:40vh;min-height:60px;overflow:auto;margin:10px 0} #jm-app .jm-directory-entry{display:flex;align-items:center;gap:12px;width:100%;text-align:left;margin-bottom:6px} #jm-app .jm-directory-picker>.jm-actions:last-child{justify-content:flex-end}
 
@@ -13,7 +13,6 @@
 #jm-app .jm-cover{position:relative;aspect-ratio:2/3;width:100%;overflow:hidden;border-radius:8px;background:#121722}#jm-app .jm-cover img{position:absolute;inset:0;display:block;width:100%;height:100%;object-fit:cover}#jm-app .jm-cover-fallback{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:16px;text-align:center;color:var(--jm-muted);background:linear-gradient(145deg,#303c50,#171d28);font-size:14px}
 
 #jm-app .jm-reader-pages.jm-vertical{overflow:visible}#jm-app .jm-vertical-page{position:relative;margin:0 auto;max-width:950px;overflow:hidden;background:#10141b}#jm-app .jm-vertical-page img{width:100%!important;max-width:100%;height:auto;margin:0}#jm-app .jm-vertical-page button{margin:20px}
-#jm-app .jm-download-progress progress { width: 100%; accent-color: var(--jm-accent); }
 
 /* Jellyfin-native presentation: theme colors, flat cards, standard controls. */
 #jm-app {
@@ -120,9 +119,6 @@
 }
 #jm-app .jm-card .jm-actions { order: 4; gap: .35em; }
 #jm-app .jm-card .jm-actions button { width: 100%; justify-content: center; }
-#jm-app .jm-card .jm-download-progress { order: 3; }
-#jm-app .jm-download-progress p { font-size: .78em; color: var(--jm-muted); margin: .2em 0; display: block; }
-#jm-app .jm-download-progress progress { height: .35em; accent-color: var(--jm-accent); }
 #jm-app .jm-panel { background: transparent; border: 0; border-bottom: 1px solid var(--jm-line); border-radius: 0; padding: 1.2em 0; }
 #jm-app .jm-row { border-bottom: 1px solid var(--jm-line); padding: .9em 0; }
 #jm-app .jm-status { background: rgba(0,164,220,.12); border-left: 3px solid var(--jm-accent); border-radius: 2px; color: inherit; padding: .7em .9em; }
@@ -250,31 +246,43 @@
 #jm-app .jm-card .jm-card-actions button, #jm-app .jm-card .jm-icon-button { width: 30px; min-width: 30px; height: 30px; min-height: 30px; }
 /* Wider cards are shorter; progress labels and per-chapter bars stay readable. */
 #jm-app .jm-grid { grid-template-columns: repeat(auto-fill,minmax(224px,1fr)); }
-#jm-app .jm-progress-label { font-weight: 600; font-size: .8em; margin: .3em .75em .15em; }
-#jm-app .jm-active-chapter { margin: .4em .75em 0; }
-#jm-app .jm-active-chapter p { font-size: .72em; color: var(--jm-muted); margin: 0 0 .15em; overflow-wrap: anywhere; }
-#jm-app .jm-download-progress { margin: .3em .75em; }
-#jm-app .jm-download-progress progress { width: 100%; height: .4em; }
 
-/* Downloads tab: a card per manga, filter chips, and compact chapter rows. */
-#jm-app .jm-dl-toolbar { display: flex; flex-wrap: wrap; gap: 8px; margin: 18px 0 22px; }
-#jm-app .jm-dl-chip { border-radius: 999px; padding: 6px 14px; font-size: 13px; background: transparent; border: 1px solid var(--jm-line); color: var(--jm-muted); }
+/* Downloads tab: paginated list with filters, search and compact rows. */
+#jm-app .jm-main.jm-downloads h1 { font-size: 24px; margin-bottom: 2px; }
+#jm-app .jm-main.jm-downloads .jm-kicker { display: none; }
+#jm-app .jm-main.jm-downloads .jm-lede { font-size: 14px; margin-bottom: 8px; }
+#jm-app .jm-dl-toolbar { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin: 8px 0 6px; }
+#jm-app .jm-dl-chips { display: flex; flex-wrap: wrap; gap: 4px; }
+#jm-app .jm-dl-chip { border-radius: 999px; padding: 3px 9px; min-height: 0; font-size: 12px; background: transparent; border: 1px solid var(--jm-line); color: var(--jm-muted); }
 #jm-app .jm-dl-chip.is-active { background: var(--jm-accent); color: #10131a; border-color: var(--jm-accent); font-weight: 600; }
-#jm-app .jm-dl-card { background: var(--jm-panel); border: 1px solid var(--jm-line); border-radius: 12px; padding: 18px 20px; margin-bottom: 18px; }
-#jm-app .jm-dl-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; }
-#jm-app .jm-dl-head h2 { margin: 0; font-size: 19px; }
-#jm-app .jm-dl-head p { margin: 4px 0 0; font-size: 13px; }
-#jm-app .jm-dl-pct { font-size: 26px; font-weight: 700; color: var(--jm-accent); font-variant-numeric: tabular-nums; }
-#jm-app .jm-dl-bar { width: 100%; height: 8px; margin: 12px 0 6px; accent-color: var(--jm-accent); }
-#jm-app .jm-dl-row { display: flex; justify-content: space-between; align-items: center; gap: 14px; padding: 10px 0; border-top: 1px solid var(--jm-line); }
-#jm-app .jm-dl-info { display: flex; flex-direction: column; gap: 4px; min-width: 0; flex: 1; }
-#jm-app .jm-dl-info strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
-#jm-app .jm-dl-info small { font-size: 12px; }
-#jm-app .jm-dl-mini { width: 100%; height: 5px; accent-color: #7dd3fc; }
-#jm-app .jm-dl-side { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+#jm-app .jm-dl-search { flex: 1 1 12em; min-width: 8em; padding: 5px 9px; min-height: 32px; }
+#jm-app .jm-dl-size { width: auto; padding: 4px 6px; min-height: 32px; }
+#jm-app .jm-dl-count { color: var(--jm-muted); font-size: 12px; margin-left: auto; }
+#jm-app .jm-dl-list { border-top: 1px solid var(--jm-line); }
+#jm-app .jm-dl-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 12px; align-items: center; padding: 6px 0; border-bottom: 1px solid rgba(48,56,71,.45); }
+#jm-app .jm-dl-info { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+#jm-app .jm-dl-info strong { font-size: 13.5px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+#jm-app .jm-dl-info small { font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+#jm-app .jm-dl-progress { display: flex; align-items: center; gap: 6px; margin-top: 2px; }
+#jm-app .jm-dl-progress progress { flex: 1; height: 4px; accent-color: #7dd3fc; }
+#jm-app .jm-dl-pct { font-size: 11px; font-weight: 600; color: #7dd3fc; font-variant-numeric: tabular-nums; min-width: 2.6em; text-align: right; }
+#jm-app .jm-dl-pages { font-size: 10px; color: var(--jm-muted); white-space: nowrap; }
+#jm-app .jm-dl-error { color: #f87171; font-size: 10px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+#jm-app .jm-dl-side { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+#jm-app .jm-dl-action { min-height: 30px; padding: 4px 10px; font-size: 12px; }
+#jm-app .jm-dl-pager { display: flex; justify-content: center; align-items: center; gap: 10px; margin: 14px 0 0; }
+#jm-app .jm-dl-pagebtn { min-height: 32px; padding: 4px 12px; font-size: 12px; }
+#jm-app .jm-dl-page { color: var(--jm-muted); font-size: 12px; }
 #jm-app .jm-pill { font-size: 12px; padding: 3px 10px; border-radius: 999px; border: 1px solid var(--jm-line); color: var(--jm-muted); white-space: nowrap; }
 #jm-app .jm-pill-downloading { color: #7dd3fc; border-color: #2b6f8a; }
 #jm-app .jm-pill-complete { color: var(--jm-accent); border-color: #4b5e2a; }
 #jm-app .jm-pill-failed { color: #f87171; border-color: #7f2a2a; }
-#jm-app .jm-dl-more { margin-top: 12px; }
-@media (max-width: 700px) { #jm-app .jm-dl-row { flex-wrap: wrap; } #jm-app .jm-dl-side { width: 100%; justify-content: flex-end; } }
+@media (max-width: 700px) { #jm-app .jm-dl-row { grid-template-columns: 1fr; } #jm-app .jm-dl-side { justify-content: flex-end; } #jm-app .jm-dl-count { margin-left: 0; } }
+
+/* Bottom-align card actions so a row of cards lines up regardless of title length. */
+#jm-app .jm-card { height: 100%; }
+#jm-app .jm-card h3 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; min-height: 2.6em; }
+#jm-app .jm-card-actions { margin-top: auto; min-height: 42px; align-items: flex-end; }
+#jm-app .jm-card > p:last-of-type { margin-bottom: 0; }
+#jm-app .jm-pdf{width:100%;height:calc(100vh - 140px);border:0;background:#fff}
+#jm-app .jm-card-download { font-size: 12px; color: #7dd3fc; margin: 0; }

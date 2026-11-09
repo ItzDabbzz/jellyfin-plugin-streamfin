@@ -4,6 +4,7 @@
     if (window.StreamFinManga) return;
     let root, main, session, current = 'library', poll, reader, generation = 0, pageAbort, pageObserver;
     let progressWrites = Promise.resolve();
+    let pdfUrl = null;
     let librarySort = 'updated';
     const blobUrls = new Map();
     const coverUrls = new Set(); let coverObserver;
@@ -53,7 +54,7 @@
     function message(text, error = false) { if (!main) return; let box = main.querySelector('.jm-status'); if (!box) { box = element('div'); box.setAttribute('role', 'status'); main.prepend(box); } box.className = 'jm-status' + (error ? ' jm-error' : ''); box.textContent = text; }
     function empty(text) { main.append(element('div', 'jm-empty', text)); }
     function heading(title, subtitle) { main.append(element('div', 'jm-kicker', 'YOUR NEXT CHAPTER'), element('h1', '', title)); if (subtitle) main.append(element('p', 'jm-lede', subtitle)); }
-    function releaseImages() { coverObserver?.disconnect(); coverObserver = null; for (const url of coverUrls) URL.revokeObjectURL(url); coverUrls.clear(); pageObserver?.disconnect(); pageAbort?.abort(); pageAbort = new AbortController(); for (const value of blobUrls.values()) URL.revokeObjectURL(value); blobUrls.clear(); }
+    function releaseImages() { if (pdfUrl) { URL.revokeObjectURL(pdfUrl); pdfUrl = null; } coverObserver?.disconnect(); coverObserver = null; for (const url of coverUrls) URL.revokeObjectURL(url); coverUrls.clear(); pageObserver?.disconnect(); pageAbort?.abort(); pageAbort = new AbortController(); for (const value of blobUrls.values()) URL.revokeObjectURL(value); blobUrls.clear(); }
     function close(push = true) { const embedded = root?.dataset.embedded === '1'; generation++; clearInterval(poll); reader = null; releaseImages(); root?.remove(); root = null; main = null; document.removeEventListener('keydown', keys); if (push && !embedded && history.state?.streamfinManga) history.back(); }
     async function open(tab = 'library', options = {}) {
         if (typeof ApiClient === 'undefined' || !ApiClient.accessToken()) return;
@@ -141,35 +142,6 @@
             } catch (ex) { if (version === generation) message(ex.message, true); } finally { submit.disabled = false; }
         };
     }
-    function downloadProgress(counts, title, active = []) {
-        const total = Object.values(counts).reduce((sum, count) => sum + count, 0);
-        const complete = counts.Complete || 0;
-        const percent = total ? Math.round(complete / total * 100) : 0;
-        const summary = element('div', 'jm-download-progress');
-        const label = percent + '% · ' + complete + ' of ' + total + ' chapters';
-        const bar = element('progress');
-        bar.max = total || 1;
-        bar.value = complete;
-        bar.setAttribute('aria-label', 'Downloads for ' + title);
-        bar.setAttribute('aria-valuetext', label);
-        summary.append(element('p', 'jm-progress-label', label), bar);
-        // One bar per chapter that is downloading right now, with its page count.
-        for (const job of active) {
-            const pages = job.progress && job.progress.total ? job.progress.done + ' / ' + job.progress.total + ' pages' : 'starting…';
-            const row = element('div', 'jm-active-chapter');
-            const chapterBar = element('progress');
-            chapterBar.max = job.progress?.total || 1;
-            chapterBar.value = job.progress?.done || 0;
-            chapterBar.setAttribute('aria-label', job.title + ' ' + pages);
-            row.append(element('p', '', job.title + ' · ' + pages), chapterBar);
-            summary.append(row);
-        }
-        const statuses = ['Downloading', 'Queued', 'Paused', 'Failed', 'Cancelled']
-            .filter(status => counts[status])
-            .map(status => counts[status] + ' ' + status.toLowerCase());
-        summary.append(element('p', 'jm-muted', statuses.join(' · ') || 'Complete'));
-        return summary;
-    }
     async function library(tab, version) {
         const continuing = tab === 'continue', recent = tab === 'recent';
         if (continuing) heading('Pick up where you left off.', 'Your progress follows your Jellyfin account across devices.');
@@ -207,8 +179,9 @@
             frame.onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); frame.onclick(); } };
             card.append(frame, sourceBadge(item.series), element('h3', '', item.series.title), element('p', 'jm-card-meta', item.downloaded + ' chapters downloaded · ' + (item.monitoring ? 'Monitoring' : 'Not monitoring')));
             if (item.progress) card.append(element('p', 'jm-card-resume', 'Resume · page ' + (item.progress.page + 1)));
-            if (item.downloadStatus && Object.keys(item.downloadStatus).length)
-                card.append(downloadProgress(item.downloadStatus, item.series.title, item.activeDownloads || []));
+            const pending = Object.entries(item.downloadStatus || {})
+                .filter(([status]) => status !== 'Complete').reduce((sum, [, count]) => sum + count, 0);
+            if (pending > 0) card.append(element('p', 'jm-card-download', pending + ' pending download' + (pending === 1 ? '' : 's')));
             if (item.lastUpdatedAt) {
                 const date = element('time', 'jm-muted', new Date(item.lastUpdatedAt).toLocaleString());
                 date.dateTime = item.lastUpdatedAt;
@@ -271,97 +244,100 @@
         }
     }
     async function downloads(version, seriesId) {
-        heading('Downloads', seriesId ? 'Downloads for this series.' : 'Everything in the queue, grouped by manga.');
+        main.className = 'jm-main jm-downloads';
+        heading('Downloads', seriesId ? 'Downloads for this series.' : 'Everything in the queue.');
         if (seriesId) main.append(button('All downloads', () => navigate('downloads')));
-        let filter = 'all';
-        const expanded = new Set();
-        let jobsCache = [];
+
+        let filter = 'all', query = '', page = 0, pageSize = 25, jobsCache = [];
         const toolbar = element('div', 'jm-dl-toolbar');
+        const chips = element('div', 'jm-dl-chips');
+        const search = element('input', 'jm-dl-search'); search.type = 'search';
+        search.placeholder = 'Filter series or chapter'; search.setAttribute('aria-label', 'Filter downloads');
+        const size = element('select', 'jm-dl-size'); size.setAttribute('aria-label', 'Downloads per page');
+        for (const value of [25, 50, 100]) size.append(new Option(value + ' per page', String(value)));
+        size.value = String(pageSize);
+        const count = element('span', 'jm-dl-count');
+        toolbar.append(chips, search, size, count);
         const list = element('div', 'jm-dl-list');
-        main.append(toolbar, list);
+        const pager = element('div', 'jm-dl-pager');
+        main.append(toolbar, list, pager);
         let refreshing = false;
 
-        const matches = job => filter === 'all' ? true
+        const matches = job => (filter === 'all' ? true
             : filter === 'active' ? (job.status === 'Downloading' || job.status === 'Queued')
-            : job.status === filter;
+                : job.status === filter)
+            && (!query || ((job.seriesTitle || '') + ' ' + job.chapter.title + ' ' + job.sourceId).toLowerCase().includes(query));
+        const rank = job => job.status === 'Downloading' ? 0 : job.status === 'Queued' ? 1 : job.status === 'Failed' ? 2 : job.status === 'Paused' ? 3 : 4;
 
         function jobRow(job) {
             const row = element('div', 'jm-dl-row');
             const info = element('div', 'jm-dl-info');
             info.append(element('strong', '', job.chapter.title));
-            const downloading = job.status === 'Downloading' && job.progress && job.progress.total > 0;
-            const note = downloading ? job.progress.done + ' / ' + job.progress.total + ' pages' : (job.error || '');
-            if (note) info.append(element('small', 'jm-muted', note));
-            if (downloading) {
-                const bar = element('progress', 'jm-dl-mini');
-                bar.max = job.progress.total; bar.value = job.progress.done;
+            const meta = element('small', 'jm-muted');
+            meta.textContent = (seriesId ? '' : (job.seriesTitle || job.sourceId) + ' · ') + sourceName(job.sourceId);
+            info.append(meta);
+            const progress = job.progress && job.progress.total > 0 ? job.progress : null;
+            const active = job.status === 'Downloading' || job.status === 'Paused' || job.status === 'Queued';
+            if (progress && active) {
+                const percent = Math.round(progress.done / progress.total * 100);
+                const line = element('div', 'jm-dl-progress');
+                const bar = element('progress');
+                bar.max = progress.total; bar.value = progress.done;
                 bar.setAttribute('aria-label', job.chapter.title + ' page progress');
-                info.append(bar);
+                line.append(bar, element('span', 'jm-dl-pct', percent + '%'), element('span', 'jm-dl-pages', progress.done + ' / ' + progress.total + ' pages'));
+                info.append(line);
+            } else if (job.status === 'Complete' && job.pages > 0) {
+                info.append(element('small', 'jm-dl-pages', job.pages + ' pages'));
             }
+            if (job.error && job.status !== 'Complete') info.append(element('small', 'jm-dl-error', job.error));
             const side = element('div', 'jm-dl-side');
             side.append(element('span', 'jm-pill jm-pill-' + job.status.toLowerCase(), job.status));
-            if (job.status === 'Complete') side.append(button('Read', () => read(job.chapter.id)));
+            if (job.status === 'Complete') side.append(button('Read', () => read(job.chapter.id), 'jm-dl-action'));
             if (job.status === 'Failed' && session.admin) side.append(button('Retry', async () => {
                 await api('admin/downloads/' + encodeURIComponent(job.chapter.id) + '/retry', 'POST');
                 await refresh();
-            }));
+            }, 'jm-dl-action'));
             row.append(info, side);
             return row;
         }
 
         function drawToolbar() {
-            toolbar.replaceChildren();
+            chips.replaceChildren();
             const counts = { all: jobsCache.length, active: 0 };
             for (const job of jobsCache) {
                 counts[job.status] = (counts[job.status] || 0) + 1;
                 if (job.status === 'Downloading' || job.status === 'Queued') counts.active++;
             }
             for (const [key, label] of [['all', 'All'], ['active', 'Active'], ['Complete', 'Complete'], ['Failed', 'Failed'], ['Queued', 'Queued']]) {
-                const chip = button(label + ' · ' + (counts[key] || 0), () => { filter = key; draw(); }, 'jm-dl-chip' + (filter === key ? ' is-active' : ''));
+                const chip = button(label + ' · ' + (counts[key] || 0), () => { filter = key; page = 0; draw(); }, 'jm-dl-chip' + (filter === key ? ' is-active' : ''));
                 chip.setAttribute('aria-pressed', String(filter === key));
-                toolbar.append(chip);
+                chips.append(chip);
             }
         }
 
         function draw() {
             drawToolbar();
+            const visible = jobsCache.filter(matches).sort((a, b) => rank(a) - rank(b)
+                || (a.seriesTitle || '').localeCompare(b.seriesTitle || '') || a.chapter.number - b.chapter.number);
+            const pages = Math.max(1, Math.ceil(visible.length / pageSize));
+            page = Math.min(Math.max(0, page), pages - 1);
+            const shown = visible.slice(page * pageSize, page * pageSize + pageSize);
+            count.textContent = visible.length + ' of ' + jobsCache.length;
             list.replaceChildren();
-            if (!jobsCache.length) { list.append(element('div', 'jm-empty', 'No downloads requested yet.')); return; }
-            const groups = new Map();
-            for (const job of jobsCache) {
-                const id = job.chapter.seriesId;
-                if (!groups.has(id)) groups.set(id, []);
-                groups.get(id).push(job);
+            if (!shown.length) list.append(element('div', 'jm-empty', jobsCache.length ? 'Nothing matches this filter.' : 'No downloads requested yet.'));
+            else shown.forEach(job => list.append(jobRow(job)));
+            pager.replaceChildren();
+            if (pages > 1) {
+                const previous = button('‹ Previous', () => { page--; draw(); }, 'jm-dl-pagebtn');
+                previous.disabled = page === 0;
+                const next = button('Next ›', () => { page++; draw(); }, 'jm-dl-pagebtn');
+                next.disabled = page >= pages - 1;
+                pager.append(previous, element('span', 'jm-dl-page', 'Page ' + (page + 1) + ' of ' + pages), next);
             }
-            let drawn = 0;
-            for (const [id, all] of groups) {
-                const chapters = all.slice().sort((a, b) => a.chapter.number - b.chapter.number);
-                const visible = chapters.filter(matches);
-                if (!visible.length) continue;
-                drawn++;
-                const complete = chapters.filter(job => job.status === 'Complete').length;
-                const pct = chapters.length ? Math.round(complete / chapters.length * 100) : 0;
-                const card = element('section', 'jm-dl-card');
-                const head = element('div', 'jm-dl-head');
-                const titleBlock = element('div', 'jm-dl-title');
-                titleBlock.append(element('h2', '', chapters[0].seriesTitle || chapters[0].sourceId));
-                titleBlock.append(element('p', 'jm-muted', 'From ' + sourceName(chapters[0].sourceId) + ' · ' + complete + ' of ' + chapters.length + ' chapters'));
-                head.append(titleBlock, element('div', 'jm-dl-pct', pct + '%'));
-                const bar = element('progress', 'jm-dl-bar');
-                bar.max = chapters.length || 1; bar.value = complete;
-                bar.setAttribute('aria-label', pct + '% of chapters downloaded');
-                card.append(head, bar);
-
-                // Downloads in progress come first so their page progress is always visible.
-                for (const job of visible.filter(job => job.status === 'Downloading')) card.append(jobRow(job));
-                const rest = visible.filter(job => job.status !== 'Downloading');
-                const limit = expanded.has(id) ? rest.length : 50;
-                for (const job of rest.slice(0, limit)) card.append(jobRow(job));
-                if (rest.length > limit) card.append(button('Show all ' + rest.length + ' chapters', () => { expanded.add(id); draw(); }, 'jm-dl-more'));
-                list.append(card);
-            }
-            if (!drawn) list.append(element('div', 'jm-empty', 'Nothing matches this filter.'));
         }
+
+        search.oninput = () => { query = search.value.trim().toLowerCase(); page = 0; draw(); };
+        size.onchange = () => { pageSize = Number(size.value) || 25; page = 0; draw(); };
 
         async function refresh() {
             if (refreshing) return;
@@ -489,6 +465,19 @@
         try {
             const manifest = await api('chapters/' + id + '/manifest'); const progress = await api('progress'); if (version !== generation) return;
             const saved = progress.find(p => p.chapterId === id); let preferences = {}; try { preferences = JSON.parse(localStorage.getItem('jm-reader:' + session.userId) || '{}'); } catch (_) { /* invalid local preference */ }
+            if (manifest.pdf) {
+                const bar = element('div', 'jm-reader-toolbar');
+                bar.append(button('Back to library', () => navigate('library')), element('strong', '', manifest.chapter.title), button('Fullscreen', async () => { if (document.fullscreenElement) await document.exitFullscreen(); else await root.requestFullscreen(); }));
+                const frame = element('iframe', 'jm-pdf'); frame.title = manifest.chapter.title;
+                main.append(bar, frame);
+                // The viewer cannot send the Jellyfin token, so fetch with it and hand the browser a blob URL.
+                const response = await fetch(ApiClient.getUrl('StreamFin/Manga/chapters/' + encodeURIComponent(id) + '/file'), { credentials: 'same-origin', headers: sessionHeaders() });
+                if (!response.ok) throw new Error('The PDF could not be opened.');
+                if (pdfUrl) URL.revokeObjectURL(pdfUrl);
+                pdfUrl = URL.createObjectURL(await response.blob());
+                if (version === generation) frame.src = pdfUrl;
+                return;
+            }
             reader = { id, chapter: manifest.chapter, total: manifest.pages, page: Math.min(start ?? saved?.page ?? 0, manifest.pages - 1), bookmarked: bookmarked ?? saved?.bookmarked ?? false, mode: preferences.mode || 'rtl', zoom: 100, render: 0 };
             const bar = element('div', 'jm-reader-toolbar'); const mode = element('select'); mode.setAttribute('aria-label', 'Reading mode'); for (const [value, text] of [['rtl', 'Right to left'], ['ltr', 'Left to right'], ['double', 'Double page'], ['vertical', 'Vertical scroll']]) mode.append(new Option(text, value)); mode.value = reader.mode;
             mode.onchange = () => { reader.mode = mode.value; localStorage.setItem('jm-reader:' + session.userId, JSON.stringify({ mode: reader.mode })); drawPages(); };
@@ -612,9 +601,19 @@
                 entry = button('', () => open('library')); entry.className = 'paper-icon-button-light headerButton headerButtonRight emby-button jm-header-icon';
                 const glyph = element('span', 'material-icons notranslate', 'menu_book'); glyph.setAttribute('aria-hidden', 'true'); entry.append(glyph);
             } else {
-                entry = element('button', 'MuiButtonBase-root MuiIconButton-root MuiIconButton-colorInherit MuiIconButton-sizeLarge jm-header-icon');
+                // Clone a native toolbar button so MUI's generated padding, icon size and alignment apply unchanged.
+                // Prefer a plain icon button: the user menu's button holds an avatar circle we must not clone.
+                const donor = [...target.querySelectorAll('button')].find(b => b.querySelector(':scope > svg') && !b.querySelector('.MuiAvatar-root') && !b.hasAttribute('data-streamfin-manga-header'))
+                    ?? [...target.querySelectorAll('button')].find(b => b.querySelector('svg') && !b.querySelector('.MuiAvatar-root') && !b.hasAttribute('data-streamfin-manga-header'));
+                entry = donor ? donor.cloneNode(true) : element('button', 'MuiButtonBase-root MuiIconButton-root MuiIconButton-colorInherit MuiIconButton-sizeLarge');
+                entry.querySelectorAll('.MuiAvatar-root').forEach(node => node.remove());
+                entry.querySelectorAll('[id]').forEach(node => node.removeAttribute('id'));
+                for (const name of ['aria-controls', 'aria-haspopup', 'aria-expanded', 'aria-pressed']) entry.removeAttribute(name);
                 entry.type = 'button';
-                entry.innerHTML = '<svg class="MuiSvgIcon-root MuiSvgIcon-fontSizeMedium" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path fill="currentColor" d="M18 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2zm0 18H6V4h2v8l2.5-1.5L13 12V4h5v16z"></path></svg>';
+                const glyph = entry.querySelector('svg');
+                const path = '<path fill="currentColor" d="M18 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2zm0 18H6V4h2v8l2.5-1.5L13 12V4h5v16z"></path>';
+                if (glyph) glyph.innerHTML = path;
+                else entry.innerHTML = '<svg class="MuiSvgIcon-root MuiSvgIcon-fontSizeMedium" focusable="false" aria-hidden="true" viewBox="0 0 24 24">' + path + '</svg>';
                 entry.onclick = () => open('library');
             }
             entry.dataset.streamfinMangaHeader = legacy ? 'legacy' : 'toolbar'; entry.title = 'StreamFin Manga'; entry.setAttribute('aria-label', 'StreamFin Manga');
