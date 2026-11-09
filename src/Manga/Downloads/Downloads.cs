@@ -110,7 +110,15 @@ public sealed class ChapterDownloader(MangaSourceRegistry sources, Store store, 
                     ct.ThrowIfCancellationRequested(); var page = pages[i]; var definition = sources.ImageDefinition(adapter.Definition, page.Url);
                     var bytes = await http.Image(new Uri(page.Url), definition, page.Referer, ct); total += bytes.Length;
                     if (total > 512L * 1024 * 1024) throw new InvalidDataException("Chapter exceeds the 512 MiB limit.");
-                    LibraryStorage.ImageExtension(bytes);
+                    try { LibraryStorage.ImageExtension(bytes); }
+                    catch (InvalidDataException ex)
+                    {
+                        var head = System.Text.Encoding.UTF8.GetString(bytes, 0, Math.Min(16, bytes.Length)).TrimStart();
+                        var kind = head.StartsWith("%PDF", StringComparison.Ordinal) ? "a PDF"
+                            : head.StartsWith("<", StringComparison.Ordinal) || head.StartsWith("{", StringComparison.Ordinal) ? "a web page or JSON"
+                            : "an unknown format";
+                        throw new InvalidDataException($"Chapter “{job.Chapter.Title}” page {i + 1} of {pages.Count} from {adapter.Definition.Name} returned {kind}, not an image. PDFs are only supported through Import existing folder. The source may be blocking requests or the chapter may have moved.", ex);
+                    }
                     if (encoder != null) bytes = await encoder.Encode(bytes, Path.GetDirectoryName(temporary)!, ct);
                     encodedTotal += bytes.Length;
                     if (encodedTotal > 512L * 1024 * 1024) throw new InvalidDataException("Encoded chapter exceeds the 512 MiB limit.");
