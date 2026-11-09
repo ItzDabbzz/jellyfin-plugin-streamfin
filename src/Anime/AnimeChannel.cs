@@ -114,7 +114,6 @@ public sealed class AnimeChannel(AniListCatalog catalog, SourceRegistry sources,
     {
         if (id.EndsWith("/status", StringComparison.Ordinal)) return Result([]);
         if (id.Length == 0) return Result([
-            Folder("search", "Search results", "Use Jellyfin's search (magnifying glass) to find anime online. Your discovered titles appear here."),
             Folder("catalog/popular/1", "Popular", "Popular anime on AniList. Source availability is checked when you open a title."),
             Folder("catalog/season/1", "This Season"), Folder("catalog/az/1", "A–Z")]);
         var parts = id.Split('/');
@@ -298,7 +297,14 @@ public sealed class AnimeChannel(AniListCatalog catalog, SourceRegistry sources,
         var videos = playback.Videos;
         var provider = SourceRegistry.Split(selected).Provider;
         var user = auth.UserId;
-        return [await relay.MediaSourceAsync(user, videos[0], $"{sources.Name(selected)} · {videos[0].Quality} · English subtitles",
-            token => sources.ResolveAsync(selected, token), () => Plugin.Allows(user) && SourceRegistry.IsEnabled(provider) && AniListCatalog.IsAllowed(anime), ct)];
+        var media = await relay.MediaSourceAsync(user, videos[0], $"{sources.Name(selected)} · {videos[0].Quality} · English subtitles",
+            token => sources.ResolveAsync(selected, token), () => Plugin.Allows(user) && SourceRegistry.IsEnabled(provider) && AniListCatalog.IsAllowed(anime), ct);
+        // Jellyfin treats an item with no runtime as fully played and drops its resume point.
+        if (saved is not null && saved.RunTimeTicks is not > 0 && media.RunTimeTicks is > 0)
+        {
+            saved.RunTimeTicks = media.RunTimeTicks;
+            await library.UpdateItemAsync(saved, saved.GetParent(), ItemUpdateType.MetadataEdit, ct);
+        }
+        return [media];
     }
 }

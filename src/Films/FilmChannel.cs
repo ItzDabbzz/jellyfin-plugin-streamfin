@@ -93,7 +93,6 @@ public sealed class FilmChannel(TmdbCatalog catalog, FlixSource flix, StreamRela
     {
         if (id.EndsWith("/status", StringComparison.Ordinal)) return Result([]);
         if (id.Length == 0) return Result([
-            Folder("search", "Search results", "Use Jellyfin's search (magnifying glass) to find movies and shows online. Your discovered titles appear here."),
             Folder("list/movies/1", "Popular movies"), Folder("list/tv/1", "Popular TV"), Folder("list/trending/1", "Trending this week")]);
         var parts = id.Split('/');
         if (id == "search")
@@ -165,7 +164,16 @@ public sealed class FilmChannel(TmdbCatalog catalog, FlixSource flix, StreamRela
         var videos = await flix.ResolveAsync(target.Film, target.Season, target.Episode, ct);
         var user = auth.UserId;
         var subtitles = videos[0].Subtitles?.Count ?? 0;
-        return [await relay.MediaSourceAsync(user, videos[0], $"FlixHQ · {videos[0].Quality}" + (subtitles > 0 ? $" · {subtitles} subtitle tracks" : ""),
-            token => flix.ResolveAsync(target.Film, target.Season, target.Episode, token), () => Plugin.Allows(user) && IsAvailable, ct)];
+        var media = await relay.MediaSourceAsync(user, videos[0], $"FlixHQ · {videos[0].Quality}" + (subtitles > 0 ? $" · {subtitles} subtitle tracks" : ""),
+            token => flix.ResolveAsync(target.Film, target.Season, target.Episode, token), () => Plugin.Allows(user) && IsAvailable, ct);
+        // Jellyfin treats an item with no runtime as fully played and drops its resume point.
+        var itemType = id.StartsWith("movie/", StringComparison.Ordinal) ? typeof(Movie) : typeof(Episode);
+        if (library.GetItemById(library.GetNewItemId(id + ChannelName + "16", itemType)) is BaseItem item
+            && item.RunTimeTicks is not > 0 && media.RunTimeTicks is > 0)
+        {
+            item.RunTimeTicks = media.RunTimeTicks;
+            await library.UpdateItemAsync(item, item.GetParent(), ItemUpdateType.MetadataEdit, ct);
+        }
+        return [media];
     }
 }

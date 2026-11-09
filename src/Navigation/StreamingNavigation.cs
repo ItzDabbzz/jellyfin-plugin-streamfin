@@ -21,7 +21,7 @@ public sealed class HubChannel : IChannel, IHasCacheKey
     public static string NormalizeDisplayName(string? value) => string.IsNullOrWhiteSpace(value) ? ChannelName : value.Trim();
     public string Name => ChannelName;
     public string Description => "Browse online anime, movies, TV shows and music.";
-    public string DataVersion => "streamfin-hub-1-" + SourceRegistry.AnyEnabled + "-" + FilmChannel.IsAvailable + "-" + MusicChannel.IsAvailable
+    public string DataVersion => "streamfin-hub-2-" + SourceRegistry.AnyEnabled + "-" + FilmChannel.IsAvailable + "-" + MusicChannel.IsAvailable
         + "-" + (Plugin.Instance?.Configuration.CacheRevision ?? 0);
     public string HomePageUrl => "https://github.com/ItzDabbzz/jellyfin-plugin-streamfin";
     public ChannelParentalRating ParentalRating => ChannelParentalRating.GeneralAudience;
@@ -88,7 +88,7 @@ public sealed class StreamingNavigation(ILibraryManager library, IChannelManager
         if (!Plugin.Allows(user.Id)) return null;
         (string? Channel, string? Folder, string? Name) target = key switch
         {
-            "anime" when SourceRegistry.AnyEnabled => ("Anime", (string?)null, "Anime"),
+            "anime" when SourceRegistry.AnyEnabled => ("Anime", "catalog/popular/1", "Anime"),
             "movies" when FilmChannel.IsAvailable => (FilmChannel.ChannelName, "list/movies/1", "Movies"),
             "tv" when FilmChannel.IsAvailable => (FilmChannel.ChannelName, "list/tv/1", "TV Shows"),
             "music" when MusicChannel.IsAvailable => (MusicChannel.ChannelName, (string?)null, "Music"),

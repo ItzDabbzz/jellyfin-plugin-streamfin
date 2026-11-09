@@ -112,7 +112,6 @@ public sealed class MusicChannel(MusicCatalog catalog, MusicAudio sources, Music
             yield return Folder("popular/albums", "Popular albums", "Browse albums from Deezer's current charts. Open an album to choose songs.");
             yield return Folder("popular/songs", "Popular songs", "Play songs from Deezer's current charts using your enabled music playback sources.");
         }
-        yield return Folder("search", "Search results", "Use Jellyfin's search (magnifying glass) to find artists, albums and songs online. What you find appears here.");
         yield return Folder("starred", "Starred", "Albums you mark as a favourite here, and albums and songs you star in a Subsonic app.");
         yield return Folder("recent", "Recently played");
     }
@@ -285,6 +284,13 @@ public sealed class MusicChannel(MusicCatalog catalog, MusicAudio sources, Music
         if (track.Title.Length > 0)
             try { await store.RecordPlayAsync(user, track, album, ct); }
             catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { logger.LogWarning("StreamFin could not save music history ({ErrorType})", ex.GetType().Name); }
+        // Jellyfin treats an item with no runtime as fully played and drops its resume point.
+        if (library.GetItemById(library.GetNewItemId(id + ChannelName + "16", typeof(Audio))) is Audio item
+            && item.RunTimeTicks is not > 0 && source.RunTimeTicks is > 0)
+        {
+            item.RunTimeTicks = source.RunTimeTicks;
+            await library.UpdateItemAsync(item, item.GetParent(), ItemUpdateType.MetadataEdit, ct);
+        }
         return [source];
     }
 }

@@ -36,7 +36,7 @@ public sealed class WarmCatalogTask(AniListCatalog anime, TmdbCatalog films, Mus
 
     public string Name => "Refresh StreamFin catalogs";
     public string Key => "StreamFinCatalogWarm";
-    public string Description => "Fetches the first page of each enabled StreamFin catalog (popular anime, this season, A–Z, popular movies, popular TV, trending and music charts) into the in-memory cache, one request at a time. Providers keep their own rate limits, so this cannot overload them.";
+    public string Description => "Fetches the first few pages of each enabled StreamFin catalog (popular anime, this season, A–Z, popular movies, popular TV, trending and music charts) into the in-memory cache, one request at a time. Providers keep their own rate limits, so this cannot overload them.";
     public string Category => "StreamFin";
 
     public async Task ExecuteAsync(IProgress<double> progress, CancellationToken cancellationToken)
@@ -47,10 +47,12 @@ public sealed class WarmCatalogTask(AniListCatalog anime, TmdbCatalog films, Mus
             // A category whose channel is off would only spend a provider's request budget.
             if (SourceRegistry.AnyEnabled)
                 foreach (var category in new[] { "popular", "season", "az" })
-                    steps.Add(token => anime.BrowseAsync(category, 1, token));
+                    foreach (var page in new[] { 1, 2, 3, 4 })
+                        steps.Add(token => anime.BrowseAsync(category, page, token));
             if (FilmChannel.IsAvailable)
                 foreach (var category in new[] { "movies", "tv", "trending" })
-                    steps.Add(token => films.BrowseAsync(category, 1, token));
+                    foreach (var page in new[] { 1, 2, 3 })
+                        steps.Add(token => films.BrowseAsync(category, page, token));
             if (MusicChannel.IsAvailable)
                 steps.Add(token => music.PopularAsync(token));
         }
