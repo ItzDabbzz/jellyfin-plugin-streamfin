@@ -61,6 +61,7 @@
       #streamfinConfig .streamfinSource > .streamfinInfo { flex: 1 1 12em; min-width: 0; overflow-wrap: anywhere; }
       #streamfinConfig .streamfinSource .streamfinActions { margin: 0; gap: .4em; flex-wrap: wrap; justify-content: flex-end; }
       #streamfinConfig .streamfinSource > .checkboxContainer, #streamfinConfig .streamfinSource > .streamfinMonitor { flex: 0 0 auto; margin: 0; }
+      #streamfinConfig .streamfinSource > .streamfinMonitor.emby-checkbox-label { display: inline-flex; align-items: center; width: auto; }
       #streamfinConfig .streamfinMangaTabs { display: flex; flex-wrap: wrap; gap: .25em; margin: 1em 0 1.25em; border-bottom: 1px solid var(--streamfin-line); }
       #streamfinConfig .streamfinMangaTab { background: none; border: 0; border-bottom: 2px solid transparent; padding: .6em .95em; margin-bottom: -1px; color: inherit; font: inherit; opacity: .72; cursor: pointer; }
       #streamfinConfig .streamfinMangaTab:hover { opacity: 1; }
@@ -102,6 +103,18 @@
       #streamfinConfig .streamfinProgress { display: flex; align-items: center; gap: .5em; margin-block-start: .35em; }
       #streamfinConfig .streamfinProgress progress { flex: 1; height: .4em; accent-color: var(--streamfin-accent); }
       #streamfinConfig .streamfinProgress span { font-size: .85em; opacity: .8; white-space: nowrap; }
+      #streamfinConfig .streamfinPane[data-pane="downloads"] .streamfinCard { padding: .9em 1em; }
+      #streamfinConfig .streamfinDownloads { display: grid; gap: 0; max-height: 24em; overflow: auto; margin-block: .6em; border-top: 1px solid rgba(128,128,128,.22); }
+      #streamfinConfig .streamfinDownload { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: .1em .5em; align-items: center; padding: .35em .2em; border-bottom: 1px solid rgba(128,128,128,.18); }
+      #streamfinConfig .streamfinDownload .streamfinInfo { min-width: 0; }
+      #streamfinConfig .streamfinDownloadTitle { display: block; font-size: .92em; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+      #streamfinConfig .streamfinDownload small { display: block; font-size: .76em; opacity: .7; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+      #streamfinConfig .streamfinDownload .streamfinProgress { grid-column: 1 / -1; margin: 0; gap: .4em; }
+      #streamfinConfig .streamfinDownload .streamfinProgress progress { height: .3em; }
+      #streamfinConfig .streamfinDownload .streamfinProgress span { font-size: .72em; }
+      #streamfinConfig .streamfinDownload .streamfinActions { display: flex; gap: .1em; margin: 0; flex-wrap: nowrap; }
+      #streamfinConfig .streamfinDownload .streamfinIconButton { width: 2em; height: 2em; min-height: 0; padding: 0; border: 0; background: transparent; }
+      #streamfinConfig .streamfinDownload .streamfinIconButton .material-icons { font-size: 1.15em; }
     </style>
     <h2>StreamFin</h2>
     <p class="streamfinIntro">Choose what appears in Jellyfin, connect your sources, and give each person access. Settings apply when you press Save; buttons that act on the server, such as clearing caches or manga downloads, run at once.</p>
@@ -214,7 +227,7 @@
         </div>
         <div class="streamfinCard">
           <h4>Save favourites to your library</h4>
-          <div class="inputContainer"><label class="inputLabel" for="musicFolder">Music library folder</label><input is="emby-input" type="text" id="musicFolder" autocomplete="off" spellcheck="false" placeholder="/media/music/StreamFin">
+          <div class="selectContainer"><label class="selectLabel" for="musicFolder">Music library folder</label><select is="emby-select" id="musicFolder"></select>
             <div class="fieldDescription">Albums you mark as a favourite (the heart on an album in the Music channel, or a star in a Subsonic app) are saved here as tagged FLAC files, one folder per artist and album, so they play offline and in any music app. Use a folder of a Jellyfin music library that Jellyfin can write to. Existing files are never replaced, and albums are saved slowly (one song every 20 seconds) to stay within the catalog's limits. Leave empty to save nothing.</div></div>
           <div class="streamfinActions"><button is="emby-button" type="button" id="musicSaveStarred" class="raised" disabled><span>Save every starred album now</span></button></div>
           <p id="musicSaveStatus" class="fieldDescription" role="status"></p>
@@ -251,7 +264,7 @@
             <h4>Your manga library</h4>
             <div id="streamfinMangaStorageSummary" class="fieldDescription">Loading library stats…</div>
             <div id="streamfinMangaLibrary" class="streamfinSourceList" role="status">Loading monitored series…</div>
-            <div class="streamfinActions"><button is="emby-button" type="button" id="streamfinMangaLibraryRefresh" class="raised"><span>Refresh library</span></button></div>
+            <div class="streamfinActions"><button is="emby-button" type="button" id="streamfinMangaLibraryRefresh" class="raised"><span>Refresh library</span></button><button is="emby-button" type="button" id="streamfinMangaImport" class="raised"><span>Import existing folder</span></button></div>
             <p id="streamfinMangaLibraryStatus" class="fieldDescription" role="status"></p>
           </div>
         </div>
@@ -259,7 +272,7 @@
           <div class="streamfinCard">
             <h4>Active downloads</h4>
             <p class="fieldDescription">Updates every few seconds while this tab is open.</p>
-            <div id="streamfinMangaDownloads" class="streamfinSourceList" role="status">Loading downloads…</div>
+            <div id="streamfinMangaDownloads" class="streamfinDownloads" role="status">Loading downloads…</div>
             <div class="streamfinActions"><button is="emby-button" type="button" id="streamfinMangaDownloadsRefresh" class="raised"><span>Refresh downloads</span></button></div>
             <p id="streamfinMangaDownloadStatus" class="fieldDescription" role="status"></p>
           </div>
@@ -415,6 +428,26 @@
         }
         page.querySelector('#streamfinMangaOpen').addEventListener('click', function () { openManga('discover'); });
         page.querySelector('#streamfinMangaOpenLibrary').addEventListener('click', function () { openManga('library'); });
+        // The save folder is a Jellyfin library location, not a free-text path.
+        function renderMusicFolder(libraries, selected) {
+          const select = page.querySelector('#musicFolder');
+          if (!select) return;
+          const current = String(selected || '').trim();
+          const option = (value, text) => { const item = document.createElement('option'); item.value = value; item.textContent = text; return item; };
+          select.replaceChildren(option('', 'Off — do not save albums'));
+          const seen = new Set();
+          (libraries || []).forEach(library => {
+            if (!['music', '', null].includes(library.CollectionType || '')) return;
+            (library.Locations || []).forEach(location => {
+              if (!location || seen.has(location)) return;
+              seen.add(location);
+              select.append(option(location, library.Name + ' — ' + location));
+            });
+          });
+          if (current && !seen.has(current)) select.append(option(current, 'Current folder — ' + current));
+          select.value = current;
+        }
+
         function renderMangaLibrarySelect(config) {
           const select = page.querySelector('#mangaLibraryId');
           const current = String((config.Manga || {}).LibraryId || '');
@@ -532,9 +565,10 @@
         });
         function whereFailed(error) { return (error && error.message) || 'The request failed. Check the Jellyfin log.'; }
         // Manga requests go through fetch so errors carry the server's message instead of a client-library failure.
-        async function mangaRequest(path, method = 'GET') {
+        async function mangaRequest(path, method = 'GET', body) {
           const headers = {}; ApiClient.setRequestHeaders(headers);
-          const response = await fetch(ApiClient.getUrl(path), { method, credentials: 'same-origin', headers });
+          if (body !== undefined) headers['Content-Type'] = 'application/json';
+          const response = await fetch(ApiClient.getUrl(path), { method, credentials: 'same-origin', headers, body: body === undefined ? undefined : JSON.stringify(body) });
           const text = await response.text();
           let data = null; try { data = text ? JSON.parse(text) : null; } catch (_) { data = null; }
           if (!response.ok) throw new Error((data && (data.message || data.title)) || ('The server returned ' + response.status + '. Check the Jellyfin log.'));
@@ -612,7 +646,10 @@
               });
               const actions = document.createElement('div'); actions.className = 'streamfinActions';
               actions.append(check, remove);
-              const monitorWrap = document.createElement('div'); monitorWrap.className = 'streamfinMonitor'; monitorWrap.append(monitor);
+              const monitorWrap = document.createElement('div'); monitorWrap.className = 'streamfinMonitor';
+              // Jellyfin's emby-checkbox upgrades as soon as it is attached and looks up a label span in its parent.
+              const monitorLabel = document.createElement('span'); monitorLabel.setAttribute('aria-hidden', 'true');
+              monitorWrap.append(monitorLabel, monitor);
               actions.insertBefore(metadata, check); row.append(monitorWrap, info, actions); list.append(row);
             });
           } catch (error) { console.error('StreamFin manga library', error); list.textContent = 'Could not load the manga library.'; status.textContent = whereFailed(error); }
@@ -627,22 +664,41 @@
             list.replaceChildren();
             if (!active.length) { list.textContent = 'No active downloads.'; return; }
             active.forEach(job => {
-              const row = document.createElement('div'); row.className = 'streamfinSource';
+              const row = document.createElement('div'); row.className = 'streamfinDownload';
               const info = document.createElement('div'); info.className = 'streamfinInfo';
-              const title = document.createElement('strong'); title.textContent = (job.seriesTitle ? job.seriesTitle + ' · ' : '') + job.chapter.title;
-              const meta = document.createElement('small'); meta.textContent = job.status + (job.error ? ' · ' + job.error : '');
-              info.append(title, document.createElement('br'), meta);
+              const title = document.createElement('strong'); title.className = 'streamfinDownloadTitle';
+              title.textContent = (job.seriesTitle ? job.seriesTitle + ' · ' : '') + job.chapter.title;
+              const meta = document.createElement('small');
+              meta.textContent = job.status + (job.error ? ' · ' + job.error : '');
+              meta.title = job.error || job.status;
+              info.append(title, meta);
               if (job.progress && job.progress.total > 0) {
                 const bar = document.createElement('div'); bar.className = 'streamfinProgress';
                 const progress = document.createElement('progress'); progress.max = job.progress.total; progress.value = job.progress.done;
-                const count = document.createElement('span'); count.textContent = job.progress.done + ' / ' + job.progress.total + ' pages';
+                const count = document.createElement('span'); count.textContent = job.progress.done + '/' + job.progress.total;
                 bar.append(progress, count); info.append(bar);
               }
-              const actions = document.createElement('div'); actions.className = 'streamfinActions'; actions.style.margin = '0'; actions.style.flexWrap = 'nowrap';
-              [['refresh', 'Retry', 'retry'], ['pause', 'Pause', 'pause'], ['close', 'Cancel', 'cancel']].forEach(([icon, label, action]) => {
-                const button = document.createElement('button'); button.type = 'button'; button.className = 'emby-button button-flat streamfinIconButton'; button.title = label; button.setAttribute('aria-label', label);
-                const span = document.createElement('span'); span.className = 'material-icons'; span.setAttribute('aria-hidden', 'true'); span.textContent = icon; button.append(span, document.createTextNode(label));
-                button.addEventListener('click', async function () { button.disabled = true; try { await ApiClient.ajax({type: 'POST', url: ApiClient.getUrl('StreamFin/Manga/admin/downloads/' + encodeURIComponent(job.chapter.id) + '/' + action)}); status.textContent = label + ' queued for ' + job.chapter.title + '.'; renderMangaDownloads(); } catch (error) { status.textContent = 'Could not ' + action + '. ' + (error.message || 'Try again.'); button.disabled = false; } });
+              const actions = document.createElement('div'); actions.className = 'streamfinActions';
+              const buttons = job.status === 'Downloading' || job.status === 'Queued'
+                ? [['pause', 'Pause', 'pause'], ['close', 'Cancel', 'cancel']]
+                : job.status === 'Paused'
+                  ? [['play_arrow', 'Resume', 'resume'], ['close', 'Cancel', 'cancel']]
+                  : [['refresh', 'Retry', 'retry'], ['close', 'Cancel', 'cancel']];
+              buttons.forEach(([icon, label, action]) => {
+                const button = document.createElement('button'); button.type = 'button';
+                button.className = 'emby-button button-flat streamfinIconButton';
+                button.title = label; button.setAttribute('aria-label', label);
+                const span = document.createElement('span'); span.className = 'material-icons';
+                span.setAttribute('aria-hidden', 'true'); span.textContent = icon;
+                button.append(span);
+                button.addEventListener('click', async function () {
+                  button.disabled = true;
+                  try {
+                    await ApiClient.ajax({type: 'POST', url: ApiClient.getUrl('StreamFin/Manga/admin/downloads/' + encodeURIComponent(job.chapter.id) + '/' + action)});
+                    status.textContent = label + ' queued for ' + job.chapter.title + '.';
+                    renderMangaDownloads();
+                  } catch (error) { status.textContent = 'Could not ' + action + '. ' + (error.message || 'Try again.'); button.disabled = false; }
+                });
                 actions.append(button);
               });
               row.append(info, actions); list.append(row);
@@ -650,6 +706,17 @@
           } catch (error) { console.error('StreamFin manga downloads', error); list.textContent = 'Could not load downloads.'; status.textContent = whereFailed(error); }
         }
         page.querySelector('#streamfinMangaLibraryRefresh').addEventListener('click', renderMangaLibrary);
+        page.querySelector('#streamfinMangaImport').addEventListener('click', async function () {
+          const folder = window.prompt('Folder inside the manga storage folder, for example "Rick And Morty":');
+          if (!folder) return;
+          const status = page.querySelector('#streamfinMangaLibraryStatus');
+          status.textContent = 'Importing…';
+          try {
+            const result = await mangaRequest('StreamFin/Manga/admin/import', 'POST', { path: folder });
+            status.textContent = 'Imported ' + result.series + ' with ' + result.chapters + ' chapters. Refresh metadata to enrich it.';
+            renderMangaLibrary();
+          } catch (error) { status.textContent = 'Could not import. ' + whereFailed(error); }
+        });
         page.querySelector('#streamfinMangaDownloadsRefresh').addEventListener('click', renderMangaDownloads);
         let loaded = false;
         let passwords = {};
@@ -664,6 +731,7 @@
             const libraries = await ApiClient.ajax({type: 'GET', url: ApiClient.getUrl('Library/VirtualFolders'), dataType: 'json'});
             if (!Array.isArray(libraries)) throw new Error('Invalid library response');
             allLibraries = libraries.filter(library => library.ItemId);
+            renderMusicFolder(libraries, config.MusicLibraryFolder);
             renderMangaLibrarySelect(config);
             libraryIds = new Set();
             libraries.filter(library => library.ItemId && ['', 'movies', 'tvshows', 'music'].includes(library.CollectionType || '')).forEach(library => {
@@ -685,6 +753,7 @@
             libraryIds = null;
             container.querySelectorAll('select').forEach(select => { select.disabled = true; });
             status.textContent = 'Could not load libraries. Existing library links will be kept when you save. Reload this page to change them.';
+            renderMusicFolder([], config.MusicLibraryFolder);
             renderMangaLibrarySelect(config);
           }
         }
