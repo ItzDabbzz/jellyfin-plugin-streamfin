@@ -478,20 +478,32 @@
                 if (version === generation) frame.src = pdfUrl;
                 return;
             }
-            reader = { id, chapter: manifest.chapter, total: manifest.pages, page: Math.min(start ?? saved?.page ?? 0, manifest.pages - 1), bookmarked: bookmarked ?? saved?.bookmarked ?? false, mode: preferences.mode || 'rtl', zoom: 100, render: 0 };
-            const bar = element('div', 'jm-reader-toolbar'); const mode = element('select'); mode.setAttribute('aria-label', 'Reading mode'); for (const [value, text] of [['rtl', 'Right to left'], ['ltr', 'Left to right'], ['double', 'Double page'], ['vertical', 'Vertical scroll']]) mode.append(new Option(text, value)); mode.value = reader.mode;
+            let chapters = [];
+            try { chapters = (await api('library/' + manifest.chapter.seriesId + '/chapters')).filter(job => job.status === 'Complete').sort((a, b) => a.chapter.number - b.chapter.number); } catch (_) { /* chapter navigation is optional */ }
+            reader = { id, chapter: manifest.chapter, chapters, chapterIndex: chapters.findIndex(job => job.chapter.id === id), total: manifest.pages, page: Math.min(start ?? saved?.page ?? 0, manifest.pages - 1), bookmarked: bookmarked ?? saved?.bookmarked ?? false, mode: preferences.mode || 'rtl', zoom: 100, render: 0 };
+            const bar = element('div', 'jm-reader-toolbar');
+            const chapterSelect = element('select', 'jm-reader-chapters'); chapterSelect.setAttribute('aria-label', 'Chapter');
+            chapters.forEach(job => chapterSelect.append(new Option('Ch. ' + job.chapter.number + (job.chapter.title ? ' · ' + job.chapter.title : ''), job.chapter.id)));
+            chapterSelect.value = id; chapterSelect.onchange = () => read(chapterSelect.value).catch(error => message(error.message, true));
+            const mode = element('select'); mode.setAttribute('aria-label', 'Reading mode'); for (const [value, text] of [['rtl', 'Right to left'], ['ltr', 'Left to right'], ['double', 'Double page'], ['vertical', 'Vertical scroll']]) mode.append(new Option(text, value)); mode.value = reader.mode;
             mode.onchange = () => { reader.mode = mode.value; localStorage.setItem('jm-reader:' + session.userId, JSON.stringify({ mode: reader.mode })); drawPages(); };
-            bar.append(button('Back to library', () => navigate('library')), element('strong', '', manifest.chapter.title), mode, button('−', () => { reader.zoom = Math.max(50, reader.zoom - 10); drawPages(); }), button('+', () => { reader.zoom = Math.min(200, reader.zoom + 10); drawPages(); }), button('Fullscreen', async () => { if (document.fullscreenElement) await document.exitFullscreen(); else await root.requestFullscreen(); }), button(reader.bookmarked ? 'Bookmarked' : 'Bookmark', async () => { reader.bookmarked = !reader.bookmarked; await saveProgress(); bar.querySelector('[data-bookmark]').textContent = reader.bookmarked ? 'Bookmarked' : 'Bookmark'; })); bar.lastChild.dataset.bookmark = '1';
+            const fullscreen = button('Fullscreen', toggleFullscreen); fullscreen.dataset.fullscreen = '1';
+            const bookmark = button(reader.bookmarked ? 'Bookmarked' : 'Bookmark', toggleBookmark); bookmark.dataset.bookmark = '1';
+            bar.append(button('Back to library', () => navigate('library')), element('strong', '', manifest.chapter.title), chapterSelect,
+                iconButton('chevron_left', 'Previous chapter', () => openChapter(-1)), iconButton('chevron_right', 'Next chapter', () => openChapter(1)),
+                mode, button('−', () => setZoom(-10)), button('+', () => setZoom(10)), fullscreen, bookmark);
             const pages = element('div', 'jm-reader-pages'); pages.tabIndex = 0; pages.setAttribute('aria-label', 'Chapter pages');
             let touchX = 0; pages.addEventListener('touchstart', e => { touchX = e.changedTouches[0].clientX; }, { passive: true }); pages.addEventListener('touchend', e => { if (!reader || reader.mode === 'vertical') return; const dx = e.changedTouches[0].clientX - touchX; if (Math.abs(dx) > 70) move((dx < 0 ? 1 : -1) * (reader.mode === 'rtl' ? -1 : 1)); }, { passive: true });
             const bottom = element('div', 'jm-reader-bottom'); const position = element('input'); position.type = 'number'; position.min = '1'; position.max = String(manifest.pages); position.setAttribute('aria-label', 'Page number'); position.style.width = '80px'; position.onchange = () => move(Number(position.value) - 1 - reader.page);
-            bottom.append(button('Previous', () => move(-1)), position, element('span', '', '/ ' + manifest.pages), button('Next', () => move(1)), button('Next chapter', nextChapter)); main.append(bar, pages, bottom); await drawPages();
+            const chapterProgress = element('progress', 'jm-reader-progress'); chapterProgress.max = manifest.pages; chapterProgress.value = reader.page + 1; reader.progress = chapterProgress;
+            bottom.append(button('Previous', () => move(-1)), position, element('span', '', '/ ' + manifest.pages), button('Next', () => move(1)), button('Next chapter', () => openChapter(1))); main.append(bar, chapterProgress, pages, bottom); await drawPages();
         } catch (e) { if (version === generation) { main.append(button('Back to library', () => navigate('library'))); message(e.message, true); } }
     }
     async function saveProgress() { if (!reader) return; const r = reader; const snapshot = { seriesId: r.chapter.seriesId, chapterId: r.id, page: r.page, bookmarked: r.bookmarked, updatedAt: new Date().toISOString() }; progressWrites = progressWrites.catch(() => {}).then(() => api('progress', 'PUT', snapshot)); await progressWrites; }
     async function drawPages() {
         if (!reader) return; const r = reader; const render = ++r.render; const area = main.querySelector('.jm-reader-pages'); if (!area) return;
         pageObserver?.disconnect(); area.replaceChildren(); area.className = 'jm-reader-pages jm-' + r.mode; main.querySelector('.jm-reader-bottom input').value = r.page + 1;
+        if (r.progress) { r.progress.max = r.total; r.progress.value = r.page + 1; }
         const count = r.mode === 'double' && innerWidth > 700 ? 2 : 1;
         if (r.mode === 'vertical') { drawVertical(r, render, area); await saveProgress(); return; }
         const indices = Array.from({ length: Math.min(count, r.total - r.page) }, (_, i) => r.page + i);
@@ -517,7 +529,7 @@
             const line = root.getBoundingClientRect().top + Math.min(160, root.clientHeight * .25);
             let low = 0, high = slots.length - 1;
             while (low < high) { const middle = (low + high) >> 1; if (slots[middle].getBoundingClientRect().bottom <= line) low = middle + 1; else high = middle; }
-            if (r.page !== low) { r.page = low; main.querySelector('.jm-reader-bottom input').value = low + 1; saveProgress().catch(e => message(e.message, true)); }
+            if (r.page !== low) { r.page = low; main.querySelector('.jm-reader-bottom input').value = low + 1; if (r.progress) r.progress.value = low + 1; saveProgress().catch(e => message(e.message, true)); }
         }
         function onScroll() { if (!frame) frame = requestAnimationFrame(updateProgress); }
         function pump() {
@@ -573,8 +585,48 @@
         slots.forEach(slot => observer.observe(slot));
     }
     async function move(delta) { if (!reader) return; const step = reader.mode === 'double' && innerWidth > 700 ? 2 : 1; reader.page = Math.max(0, Math.min(reader.total - 1, reader.page + delta * (Math.abs(delta) === 1 ? step : 1))); await drawPages(); }
-    async function nextChapter() { if (!reader) return; const r = reader; const jobs = (await api('library/' + r.chapter.seriesId + '/chapters')).filter(j => j.status === 'Complete'); const next = jobs[jobs.findIndex(j => j.chapter.id === r.id) + 1]; if (next) await read(next.chapter.id, 0); else message('You are up to date with downloaded chapters.'); }
-    function keys(e) { if (!root || root.querySelector('dialog[open]')) return; if (e.key === 'Escape' && !document.fullscreenElement) { close(); return; } if (!reader || ['INPUT', 'TEXTAREA', 'SELECT'].includes(e.target.tagName)) return; if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') { e.preventDefault(); move((e.key === 'ArrowRight' ? 1 : -1) * (reader.mode === 'rtl' ? -1 : 1)).catch(ex => message(ex.message, true)); } }
+    async function openChapter(delta) {
+        const r = reader; if (!r || r.chapterIndex < 0) return;
+        const target = r.chapters?.[r.chapterIndex + delta];
+        if (!target) { message(delta > 0 ? 'No later downloaded chapter.' : 'No earlier downloaded chapter.'); return; }
+        await read(target.chapter.id, 0);
+    }
+    async function toggleBookmark() {
+        if (!reader) return;
+        reader.bookmarked = !reader.bookmarked;
+        await saveProgress();
+        const button = main.querySelector('[data-bookmark]');
+        if (button) button.textContent = reader.bookmarked ? 'Bookmarked' : 'Bookmark';
+    }
+    async function toggleFullscreen() {
+        if (document.fullscreenElement) await document.exitFullscreen();
+        else if (root) await root.requestFullscreen();
+    }
+    function setZoom(delta) {
+        if (!reader) return;
+        reader.zoom = Math.max(50, Math.min(200, reader.zoom + delta));
+        drawPages();
+    }
+    function keys(e) {
+        if (!root || root.querySelector('dialog[open]')) return;
+        if (e.key === 'Escape' && !document.fullscreenElement) { close(); return; }
+        if (!reader || ['INPUT', 'TEXTAREA', 'SELECT'].includes(e.target.tagName)) return;
+        if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
+            e.preventDefault();
+            move((e.key === 'ArrowRight' ? 1 : -1) * (reader.mode === 'rtl' ? -1 : 1)).catch(ex => message(ex.message, true));
+            return;
+        }
+        if (e.key === 'ArrowDown' || e.key === 'PageDown' || e.key === ' ') { e.preventDefault(); move(1).catch(ex => message(ex.message, true)); return; }
+        if (e.key === 'ArrowUp' || e.key === 'PageUp') { e.preventDefault(); move(-1).catch(ex => message(ex.message, true)); return; }
+        const key = e.key.toLowerCase();
+        if (key === 'f') { e.preventDefault(); toggleFullscreen().catch(() => {}); }
+        else if (key === 'b') { e.preventDefault(); toggleBookmark().catch(() => {}); }
+        else if (key === 'n') { e.preventDefault(); openChapter(1).catch(ex => message(ex.message, true)); }
+        else if (key === 'p') { e.preventDefault(); openChapter(-1).catch(ex => message(ex.message, true)); }
+        else if (e.key === '+' || e.key === '=') { e.preventDefault(); setZoom(10); }
+        else if (e.key === '-') { e.preventDefault(); setZoom(-10); }
+        else if (e.key === '0') { e.preventDefault(); reader.zoom = 100; drawPages(); }
+    }
     // Scope observers to adding our own entries; never rewrite/remove another plugin's navigation.
     let scheduled = false;
     function headerActions(toolbar) {
