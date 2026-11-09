@@ -5,7 +5,7 @@
     <Nullable>enable</Nullable>
     <AssemblyName>Jellyfin.Plugin.StreamFin</AssemblyName>
     <RootNamespace>StreamFin</RootNamespace>
-    <Version>0.12.0.8</Version>
+    <Version>0.12.0.9</Version>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <!-- CA1416 flags Windows-only API use across the codebase; the plugin runs on Windows and Linux servers, so it is not an error here. -->
     <NoWarn>$(NoWarn);CA1416</NoWarn>

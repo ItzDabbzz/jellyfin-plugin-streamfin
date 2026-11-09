@@ -168,9 +168,8 @@ CI does the same on every push, plus CodeQL, a secret scan over the whole histor
 The version lives in one place: `<Version>` in `src/StreamFin.csproj`. Bump it, commit, then tag the commit with the same version prefixed by `v`. Pushing the tag publishes the release.
 
 ```sh
-# 1. set <Version>0.12.0.9</Version> in src/StreamFin.csproj
-git add src/StreamFin.csproj
-git commit -m "chore: bump version to 0.12.0.9"
+# 1. src/StreamFin.csproj: <Version>0.12.0.9</Version>
+git commit -am "chore: bump version to 0.12.0.9"
 
 # 2. annotated tag - its body becomes the release notes and the manifest changelog
 git tag -a v0.12.0.9 -m "StreamFin 0.12.0.9" -m "- fix: ..." -m "- feat: ..."
