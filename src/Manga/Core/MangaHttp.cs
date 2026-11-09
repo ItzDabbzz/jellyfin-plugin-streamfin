@@ -8,6 +8,7 @@ public interface ISourceHttp
 {
     Task<string> Text(Uri uri, SourceDefinition source, CancellationToken ct);
     Task<byte[]> Image(Uri uri, SourceDefinition source, string referer, CancellationToken ct);
+    Task<byte[]> Document(Uri uri, SourceDefinition source, string referer, CancellationToken ct) => throw new NotSupportedException("Document download not supported by this transport.");
     Task<byte[]> Data(Uri uri, SourceDefinition source, CancellationToken ct) => throw new NotSupportedException("Binary API not supported by this transport.");
     Task<byte[]> Data(Uri uri, SourceDefinition source, IReadOnlyDictionary<string, string> headers, CancellationToken ct) => throw new NotSupportedException("Session API requests are not supported by this transport.");
     Task<string> FormText(Uri uri, SourceDefinition source, CancellationToken ct) => throw new NotSupportedException("Form API not supported by this transport.");
@@ -65,6 +66,8 @@ public sealed class MangaHttp : ISourceHttp, IDisposable
     public async Task<string> Text(Uri uri, SourceDefinition source, CancellationToken ct)
         => System.Text.Encoding.UTF8.GetString(await Read(uri, source, "", 8 * 1024 * 1024, false, ct));
     public Task<byte[]> Image(Uri uri, SourceDefinition source, string referer, CancellationToken ct) => Read(uri, source, referer, 32 * 1024 * 1024, true, ct);
+    // PDF chapters are documents: the source serves application/pdf, not image/*.
+    public Task<byte[]> Document(Uri uri, SourceDefinition source, string referer, CancellationToken ct) => Read(uri, source, referer, 64 * 1024 * 1024, false, ct);
     public Task<byte[]> Data(Uri uri, SourceDefinition source, CancellationToken ct) => Read(uri, source, "", 8 * 1024 * 1024, false, ct);
     public Task<byte[]> Data(Uri uri, SourceDefinition source, IReadOnlyDictionary<string, string> headers, CancellationToken ct) => Read(uri, source, "", 8 * 1024 * 1024, false, ct, extraHeaders: headers);
     public async Task<string> FormText(Uri uri, SourceDefinition source, CancellationToken ct) => System.Text.Encoding.UTF8.GetString(await Read(uri, source, "", 8 * 1024 * 1024, false, ct, true));

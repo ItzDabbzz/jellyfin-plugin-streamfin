@@ -64,6 +64,6 @@ public static class MangaNames
         var taken = store.All<DownloadJob>("job").Any(job => job.Chapter.Id != chapterId && string.Equals(job.RelativePath, candidate, StringComparison.OrdinalIgnoreCase));
         if (!taken) return candidate;
         var stem = Path.GetFileNameWithoutExtension(fileName);
-        return Path.Combine(seriesFolder, stem + " [" + chapterId[..8] + "].cbz");
+        return Path.Combine(seriesFolder, stem + " [" + chapterId[..8] + "]" + Path.GetExtension(fileName));
     }
 }

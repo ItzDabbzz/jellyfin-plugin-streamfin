@@ -95,6 +95,27 @@ public sealed class ChapterDownloader(MangaSourceRegistry sources, Store store, 
         // Metadata is best-effort: a ComicVine problem must never fail the chapter download.
         VolumeMetadata? comic = null;
         if (series is not null) { try { comic = await MangaMetadata.Resolve(store, series, MangaHost.Options.ComicVineApiKey, ct); } catch (Exception ex) when (ex is not OperationCanceledException) { } }
+        // Some sources publish a chapter as one PDF instead of page images.
+        if (pages.Count == 1)
+        {
+            var page = pages[0];
+            var definition = sources.ImageDefinition(adapter.Definition, page.Url);
+            var document = await http.Document(new Uri(page.Url), definition, page.Referer, ct);
+            if (document.Length >= 5 && document[0] == (byte)'%' && document[1] == (byte)'P' && document[2] == (byte)'D' && document[3] == (byte)'F' && document[4] == (byte)'-')
+            {
+                var pdfName = Path.ChangeExtension(MangaNames.ChapterFile(job.Chapter), ".pdf");
+                var relativePdf = MangaNames.UniqueChapterFile(store, job.Chapter.Id, folder, pdfName);
+                var temporaryPdf = storage.Absolute(Path.Combine(".staging", job.Chapter.Id + "-" + Guid.NewGuid().ToString("N") + ".pdf.part"));
+                try
+                {
+                    await System.IO.File.WriteAllBytesAsync(temporaryPdf, document, ct);
+                    await storage.Commit(temporaryPdf, relativePdf, ct);
+                    DownloadProgress.Set(job.Chapter.Id, 1, 1);
+                }
+                finally { if (System.IO.File.Exists(temporaryPdf)) System.IO.File.Delete(temporaryPdf); }
+                return (relativePdf, 0);
+            }
+        }
         var relative = MangaNames.UniqueChapterFile(store, job.Chapter.Id, folder, MangaNames.ChapterFile(job.Chapter));
         var temporary = storage.Absolute(Path.Combine(".staging", job.Chapter.Id + "-" + Guid.NewGuid().ToString("N") + ".part"));
         Directory.CreateDirectory(Path.GetDirectoryName(temporary)!);
