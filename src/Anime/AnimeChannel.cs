@@ -18,12 +18,12 @@ using MediaBrowser.Model.Drawing;
 namespace StreamFin;
 
 public sealed class AnimeChannel(AniListCatalog catalog, SourceRegistry sources, StreamRelay relay,
-    IHttpContextAccessor contexts, IAuthorizationContext authorization, ILibraryManager library, ILogger<AnimeChannel> logger)
+    IHttpContextAccessor contexts, IAuthorizationContext authorization, ILibraryManager library, ExternalTagCache external, ILogger<AnimeChannel> logger)
     : IChannel, IHasCacheKey, IRequiresMediaInfoCallback
 {
     public string Name => "Anime";
-    public string Description => "StreamFin · Browse anime and stream Japanese audio with English subtitles.";
-    public string DataVersion => "streamfin-10-" + SourceRegistry.CacheKey + "-" + AniListCatalog.PolicyKey + "-" + (Plugin.Instance?.Configuration.CacheRevision ?? 0);
+    public string Description => "JellySteamHub · Browse anime and stream Japanese audio with English subtitles.";
+    public string DataVersion => "streamfin-11-" + SourceRegistry.CacheKey + "-" + AniListCatalog.PolicyKey + "-" + (Plugin.Instance?.Configuration.CacheRevision ?? 0);
     public string HomePageUrl => "https://github.com/ItzDabbzz/jellyfin-plugin-streamfin";
     public ChannelParentalRating ParentalRating => ChannelParentalRating.GeneralAudience;
     public bool IsEnabledFor(string userId) => Guid.TryParse(userId, out var id) && Plugin.Allows(id);
@@ -53,25 +53,53 @@ public sealed class AnimeChannel(AniListCatalog catalog, SourceRegistry sources,
         return new() { Items = array, TotalRecordCount = array.Length };
     }
 
+    // AniList already returns these fields with every title, so a series and its episodes can show a rating,
+    // genres and animation studios without leaving the channel for another provider.
+    private static void ApplyMetadata(Anime anime, ChannelItemInfo item)
+    {
+        if (anime.AverageScore is int score && score > 0) item.CommunityRating = score / 10f;
+        if (anime.Genres.Length > 0) item.Genres = [.. anime.Genres];
+        if (anime.Year is int year && year > 0) item.ProductionYear = year;
+        var tags = anime.Tags ?? Array.Empty<string>();
+        item.Tags = ["StreamFin", .. tags];
+        if (anime.Studios is { Length: > 0 } studios) item.Studios = [.. studios];
+    }
+
+    // The AniList and MyAnimeList ids let Jellyfin Enhanced and other metadata readers recognise the title.
+    private static Dictionary<string, string> ProviderIdsFor(Anime anime, string key, string value)
+    {
+        var ids = new Dictionary<string, string> { [key] = value };
+        if (anime.Id > 0) ids["AniList"] = anime.Id.ToString(CultureInfo.InvariantCulture);
+        if (anime.MalId is int mal && mal > 0) ids["MyAnimeList"] = mal.ToString(CultureInfo.InvariantCulture);
+        return ids;
+    }
+
     public static ChannelItemInfo Item(Anime anime, string scope)
     {
         var item = Folder($"title/{scope}/{anime.Id}", anime.Title, anime.Overview);
         item.ImageUrl = anime.Image;
-        item.ProductionYear = anime.Year;
         item.FolderType = ChannelFolderType.Series;
-        item.ProviderIds = new Dictionary<string, string> { ["Custom"] = $"anifin-series-{anime.Id}" };
+        // Jellyfin shares episode progress using the parent series' Custom provider ID.
+        // The anifin prefix predates the rename; changing it would orphan saved progress.
+        item.ProviderIds = ProviderIdsFor(anime, "Custom", $"anifin-series-{anime.Id}");
+        ApplyMetadata(anime, item);
         return item;
     }
 
     public async Task<ChannelItemResult> GetChannelItems(InternalChannelItemQuery query, CancellationToken ct)
     {
-        if (query.UserId != Guid.Empty && !Plugin.Allows(query.UserId)) throw new UnauthorizedAccessException("StreamFin is not enabled for this account.");
+        if (query.UserId != Guid.Empty && !Plugin.Allows(query.UserId)) throw new UnauthorizedAccessException("JellySteamHub is not enabled for this account.");
         if (Plugin.Instance?.Configuration is not { Enabled: true }) return Result([]);
         var id = query.FolderId ?? "";
-        try { return await BrowseAsync(id, ct); }
+        try
+        {
+            var result = await BrowseAsync(id, ct);
+            if (await ChannelMetadata.SyncAsync(library, Name, result.Items, ct, id => ArtworkResolver.ForAnime(catalog, id)) > 0) external.QueueIfPresent();
+            return result;
+        }
         catch (Exception ex) when (ex is ProviderException or HttpRequestException or System.Text.RegularExpressions.RegexMatchTimeoutException or UriFormatException or System.Text.Json.JsonException or TaskCanceledException && !ct.IsCancellationRequested)
         {
-            logger.LogWarning("StreamFin catalog request failed ({ErrorType})", ex.GetType().Name);
+            logger.LogWarning("JellySteamHub catalog request failed ({ErrorType})", ex.GetType().Name);
             var message = ex is ProviderException ? ex.Message : "The catalog or source is temporarily unavailable. Please try again later.";
             // Native channels have no error banner. A non-playable status folder gives a readable explanation.
             var status = Folder(id + "/status", message, message);
@@ -136,9 +164,6 @@ public sealed class AnimeChannel(AniListCatalog catalog, SourceRegistry sources,
             {
                 // Categories get distinct folder IDs: Jellyfin otherwise moves one folder between parents.
                 var item = Item(anime, category);
-                // Jellyfin shares episode progress using the parent series' Custom provider ID.
-                // The anifin prefix predates the rename; changing it would orphan saved progress.
-                item.ProviderIds = new Dictionary<string, string> { ["Custom"] = $"anifin-series-{anime.Id}" };
                 item.IndexNumber = Array.IndexOf(data.Items.ToArray(), anime) + 1;
                 return item;
             }).ToList();
@@ -205,7 +230,7 @@ public sealed class AnimeChannel(AniListCatalog catalog, SourceRegistry sources,
         {
             var main = key == primary;
             var item = Folder(prefix + key, main ? label : label.Replace("Episodes · ", "Also on ", StringComparison.Ordinal), main
-                ? "Japanese audio with English subtitles. If this source fails, StreamFin plays the episode from another provider."
+                ? "Japanese audio with English subtitles. If this source fails, JellySteamHub plays the episode from another provider."
                 : "The same series from another provider. Play an episode here to watch this provider's copy.");
             item.FolderType = ChannelFolderType.Season;
             item.IndexNumber = main ? 1 : AlternateSeason(key);
@@ -264,18 +289,23 @@ public sealed class AnimeChannel(AniListCatalog catalog, SourceRegistry sources,
         // The series listing (always opened first) has already numbered this provider's season.
         var season = (library.GetItemById(library.GetNewItemId($"source/{scope}/{anime.Id}/{sourceId}Anime16", typeof(Season))) as Season)?.IndexNumber ?? 1;
         var name = sources.Name(sourceId);
-        return Result(episodes.Select(episode => new ChannelItemInfo
+        return Result(episodes.Select(episode =>
         {
-            Id = $"episode/{scope}/{anime.Id}/{SourceRegistry.Key(provider, episode.Id)}",
-            Name = $"{episode.Number.ToString(CultureInfo.InvariantCulture)} · {episode.Title}",
-            SeriesName = anime.Title, Type = ChannelItemType.Media, MediaType = ChannelMediaType.Video,
-            ContentType = ChannelMediaContentType.Episode, ImageUrl = anime.Image,
-            Overview = provider == "zoko" ? $"Japanese audio · English subtitles (selectable) · {name}" : $"Japanese audio · English subtitles (embedded in the video) · {name}",
-            IndexNumber = episode.Number == decimal.Truncate(episode.Number) ? (int)episode.Number : null,
-            ParentIndexNumber = season, ProductionYear = anime.Year,
-            RunTimeTicks = anime.Duration is > 0 ? TimeSpan.FromMinutes(anime.Duration.Value).Ticks : null,
-            // The AniFin provider key predates the rename; watch state is matched on it.
-            Tags = ["StreamFin"], ProviderIds = new Dictionary<string, string> { ["AniFinEpisode"] = SourceRegistry.Key(provider, episode.Id) }
+            var item = new ChannelItemInfo
+            {
+                Id = $"episode/{scope}/{anime.Id}/{SourceRegistry.Key(provider, episode.Id)}",
+                Name = $"{episode.Number.ToString(CultureInfo.InvariantCulture)} · {episode.Title}",
+                SeriesName = anime.Title, Type = ChannelItemType.Media, MediaType = ChannelMediaType.Video,
+                ContentType = ChannelMediaContentType.Episode, ImageUrl = anime.Banner ?? anime.Image,
+                Overview = provider == "zoko" ? $"Japanese audio · English subtitles (selectable) · {name}" : $"Japanese audio · English subtitles (embedded in the video) · {name}",
+                IndexNumber = episode.Number == decimal.Truncate(episode.Number) ? (int)episode.Number : null,
+                ParentIndexNumber = season,
+                RunTimeTicks = anime.Duration is > 0 ? TimeSpan.FromMinutes(anime.Duration.Value).Ticks : null,
+                // The AniFin provider key predates the rename; watch state is matched on it.
+                ProviderIds = ProviderIdsFor(anime, "AniFinEpisode", SourceRegistry.Key(provider, episode.Id))
+            };
+            ApplyMetadata(anime, item);
+            return item;
         }));
     }
 
@@ -284,9 +314,9 @@ public sealed class AnimeChannel(AniListCatalog catalog, SourceRegistry sources,
         var context = contexts.HttpContext;
         if (context is null) return [];
         var auth = await authorization.GetAuthorizationInfo(context);
-        if (!auth.IsAuthenticated || !Plugin.Allows(auth.UserId)) throw new UnauthorizedAccessException("StreamFin is not enabled for this account.");
+        if (!auth.IsAuthenticated || !Plugin.Allows(auth.UserId)) throw new UnauthorizedAccessException("JellySteamHub is not enabled for this account.");
         var parts = id.Split('/');
-        if (parts is not ["episode", _, var animeText, var episode] || !int.TryParse(animeText, out var animeId)) throw new ProviderException("Invalid StreamFin episode.");
+        if (parts is not ["episode", _, var animeText, var episode] || !int.TryParse(animeText, out var animeId)) throw new ProviderException("Invalid JellySteamHub episode.");
         var anime = await catalog.GetAsync(animeId, ct);
         if (!AniListCatalog.IsAllowed(anime)) throw new ProviderException("This title is hidden by the content filter.");
         var saved = library.GetItemById(library.GetNewItemId(id + "Anime16", typeof(Episode))) as Episode;

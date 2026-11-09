@@ -18,7 +18,9 @@ public sealed class AniListCatalog(SafeHttp http, CatalogCache store, ILogger<An
     // Typing a search fires a query per pause. Searches get part of the budget and never wait,
     // so browsing a page always has slots left.
     private readonly RateWindow searches = new(15, TimeSpan.FromMinutes(1));
-    private const string Fields = "id idMal title { romaji english native } synonyms startDate { year } description(asHtml:false) coverImage { large } duration isAdult genres episodes nextAiringEpisode { episode }";
+    private const string Fields = "id idMal title { romaji english native } synonyms startDate { year } description(asHtml:false) coverImage { large } bannerImage duration isAdult averageScore popularity genres episodes tags { name rank isMediaSpoiler } studios { nodes { name isAnimationStudio } } nextAiringEpisode { episode }";
+    // AniList ranks tags by relevance; a handful describe a title better than the full list.
+    private const int MaxTags = 8;
     private static readonly Uri Endpoint = new("https://graphql.anilist.co");
     private static readonly TimeSpan StaleFor = TimeSpan.FromHours(24);
     private int Revision => Plugin.Instance?.Configuration.CacheRevision ?? 0;
@@ -160,19 +162,54 @@ public sealed class AniListCatalog(SafeHttp http, CatalogCache store, ILogger<An
     {
         static string? Text(JsonElement e, string key) => e.TryGetProperty(key, out var value) && value.ValueKind == JsonValueKind.String ? value.GetString() : null;
         static int? Number(JsonElement e, string key) => e.TryGetProperty(key, out var value) && value.ValueKind == JsonValueKind.Number ? value.GetInt32() : null;
+        // Tags are relevance-ranked and spoiler tags give the plot away, so only the strongest few are kept.
+        static string[] Tags(JsonElement tagNodes)
+        {
+            if (tagNodes.ValueKind != JsonValueKind.Array) return [];
+            return tagNodes.EnumerateArray()
+                .Where(tag => tag.ValueKind == JsonValueKind.Object && !(tag.TryGetProperty("isMediaSpoiler", out var spoiler) && spoiler.ValueKind == JsonValueKind.True))
+                .Select(tag => (Name: Text(tag, "name"), Rank: Number(tag, "rank") ?? 0))
+                .Where(tag => !string.IsNullOrWhiteSpace(tag.Name))
+                .OrderByDescending(tag => tag.Rank)
+                .Select(tag => tag.Name)
+                .OfType<string>()
+                .Distinct(StringComparer.Ordinal)
+                .Take(MaxTags)
+                .ToArray();
+        }
+        // AniList lists every company that worked on a title; Jellyfin's studio field only wants animation studios.
+        static string[] Studios(JsonElement studiosNode)
+        {
+            if (studiosNode.ValueKind != JsonValueKind.Object || !studiosNode.TryGetProperty("nodes", out var nodes) || nodes.ValueKind != JsonValueKind.Array) return [];
+            return nodes.EnumerateArray()
+                .Where(studio => studio.ValueKind == JsonValueKind.Object
+                    && studio.TryGetProperty("isAnimationStudio", out var animation) && animation.ValueKind == JsonValueKind.True)
+                .Select(studio => Text(studio, "name"))
+                .OfType<string>()
+                .Where(name => name.Length > 0)
+                .Distinct(StringComparer.Ordinal)
+                .ToArray();
+        }
         var title = node.GetProperty("title");
         var aliases = new[] { Text(title, "romaji"), Text(title, "english"), Text(title, "native") }
             .Concat(node.GetProperty("synonyms").EnumerateArray().Select(s => s.GetString()))
             .OfType<string>().Where(s => s.Length > 0).Distinct().ToArray();
         var image = Text(node.GetProperty("coverImage"), "large");
         if (!Uri.TryCreate(image, UriKind.Absolute, out var imageUri) || imageUri.Scheme != "https" || !imageUri.Host.EndsWith(".anilist.co", StringComparison.Ordinal)) image = null;
+        // AniList banners are the wide 16:9 art Jellyfin uses behind the player and on the title page.
+        var banner = Text(node, "bannerImage");
+        if (!Uri.TryCreate(banner, UriKind.Absolute, out var bannerUri) || bannerUri.Scheme != "https" || !bannerUri.Host.EndsWith(".anilist.co", StringComparison.Ordinal)) banner = null;
+        var tags = Array.Empty<string>();
+        if (node.TryGetProperty("tags", out var tagList)) tags = Tags(tagList);
+        var studios = Array.Empty<string>();
+        if (node.TryGetProperty("studios", out var studioList)) studios = Studios(studioList);
         // An airing show has episodes up to the next one; a finished show reports its total.
         var next = node.TryGetProperty("nextAiringEpisode", out var airing) && airing.ValueKind == JsonValueKind.Object ? Number(airing, "episode") : null;
         var available = next is > 1 ? next - 1 : next is null ? Number(node, "episodes") : null;
         return new Anime(node.GetProperty("id").GetInt32(), Text(title, "english") ?? Text(title, "romaji") ?? "Unknown anime", aliases,
             Number(node.GetProperty("startDate"), "year"), AnimeGgSource.Clean(Text(node, "description") ?? ""), image,
             Number(node, "duration"), node.GetProperty("isAdult").GetBoolean(), node.GetProperty("genres").EnumerateArray().Select(g => g.GetString()!).ToArray(),
-            Number(node, "idMal"), available);
+            Number(node, "idMal"), available, Number(node, "averageScore"), Number(node, "popularity"), tags, studios, banner);
     }
 }
 

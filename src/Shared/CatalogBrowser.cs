@@ -3,9 +3,8 @@ using Jellyfin.Database.Implementations.Entities;
 using MediaBrowser.Controller.Channels;
 using MediaBrowser.Controller.Dto;
 using MediaBrowser.Controller.Entities;
-using MediaBrowser.Controller.Entities.Movies;
-using MediaBrowser.Controller.Entities.TV;
 using MediaBrowser.Controller.Library;
+using MediaBrowser.Model.Channels;
 using MediaBrowser.Model.Dto;
 using MediaBrowser.Model.Entities;
 using MediaBrowser.Model.Querying;
@@ -14,7 +13,8 @@ namespace StreamFin;
 
 // ChannelManager pages its local database, not the provider's catalog. Handle catalog
 // requests before that step so every category has the same native offset/limit contract.
-public sealed class CatalogBrowser(AniListCatalog anime, TmdbCatalog films, OnlineSearch animeSearch, FilmSearch filmSearch, ILibraryManager library, IDtoService dtos)
+public sealed class CatalogBrowser(AniListCatalog anime, TmdbCatalog films, OnlineSearch animeSearch, FilmSearch filmSearch,
+    ILibraryManager library, IDtoService dtos, ChannelItemWriter writer)
 {
     public static bool IsBrowseAction(string? action) => action is "GetItems" or "GetItemsByUserIdLegacy" or "GetChannelItems";
     public static bool IsCatalog(string? id) => id?.Split('/') is ["catalog", "popular" or "season" or "az", _]
@@ -65,59 +65,17 @@ public sealed class CatalogBrowser(AniListCatalog anime, TmdbCatalog films, Onli
         if (requestedOffset < 0 || requestedOffset >= (parts[0] == "catalog" ? 30000 : 10000))
             throw new ProviderException("Invalid catalog page.");
         var offset = (int)requestedOffset;
-        CatalogSlice<ChannelItemInfo> page;
-        if (parts[0] == "catalog")
-        {
-            page = await CatalogPagination.SliceAsync<ChannelItemInfo>(offset, effectiveLimit, upstreamSize, 1000, async number =>
-            {
-                var data = await anime.BrowseAsync(parts[1], number, ct);
-                return (data.Items.Select(item => AnimeChannel.Item(item, parts[1])).ToArray(), data.TotalCount);
-            }, ct);
-        }
-        else
-        {
-            page = await CatalogPagination.SliceAsync<ChannelItemInfo>(offset, effectiveLimit, upstreamSize, 500, async number =>
-            {
-                var data = await films.BrowseAsync(parts[1], number, ct);
-                return (data.Items.Select(item => FilmChannel.Item(item, parts[1])).ToArray(), data.TotalCount);
-            }, ct);
-        }
+        var page = await PageAsync(parts[0], parts[1], offset, effectiveLimit, upstreamSize, ct);
         var infos = page.Items.ToList();
         var pageCard = CatalogPagination.NeedsPageCard(limit);
         if (pageCard && CatalogPagination.NextPage(parts[0], parts[1], legacyPage,
             offset + upstreamSize < page.Total, parts[0] == "catalog" ? 1000 : 500) is { } next) infos.Add(next);
-        var saved = new List<BaseItem>();
+        List<BaseItem> saved;
         await ChannelNavigation.Gate.WaitAsync(ct);
         try
         {
-            foreach (var info in infos)
-            {
-                var type = info.Type == ChannelItemType.Media ? typeof(Movie)
-                    : info.FolderType == MediaBrowser.Model.Channels.ChannelFolderType.Series ? typeof(Series) : typeof(Folder);
-                var id = library.GetNewItemId(info.Id + channel.Name + "16", type);
-                var existing = library.GetItemById(id);
-                var item = existing ?? (type == typeof(Movie) ? new Movie() : type == typeof(Series) ? new Series() : new Folder());
-                item.Id = id;
-                item.ExternalId = info.Id;
-                item.ChannelId = channel.Id;
-                // An already discovered title keeps its parent and descendants. Paging must not
-                // delete omitted titles or move a series between catalog page folders.
-                if (existing is null) item.ParentId = folder.Id;
-                item.Name = info.Name;
-                item.Overview = info.Overview;
-                item.ProductionYear = info.ProductionYear;
-                item.RunTimeTicks = info.RunTimeTicks;
-                item.ProviderIds = info.ProviderIds;
-                item.Tags = ["StreamFin"];
-                if (type == typeof(Folder)) item.ForcedSortName = "\uffff-next-page";
-                if (existing is null) item.DateCreated = DateTime.UtcNow;
-                if (string.IsNullOrEmpty(item.PresentationUniqueKey)) item.PresentationUniqueKey = "streamfin-catalog-" + info.Id;
-                if (info.ImageUrl is not null && !item.HasImage(ImageType.Primary)) item.SetImagePath(ImageType.Primary, info.ImageUrl);
-                item.OnMetadataChanged();
-                if (existing is null) library.CreateItem(item, folder);
-                else await item.UpdateToRepositoryAsync(ItemUpdateType.MetadataEdit, ct);
-                saved.Add(item);
-            }
+            saved = await writer.UpsertAsync(channel, folder, infos, ct, id => parts[0] == "catalog"
+                ? ArtworkResolver.ForAnime(anime, id) : ArtworkResolver.ForFilm(films, id));
         }
         finally { ChannelNavigation.Gate.Release(); }
         return new QueryResult<BaseItemDto>
@@ -125,5 +83,22 @@ public sealed class CatalogBrowser(AniListCatalog anime, TmdbCatalog films, Onli
             Items = dtos.GetBaseItemDtos(saved, options, user, null, false), StartIndex = start,
             TotalRecordCount = pageCard ? saved.Count : Math.Max(0, page.Total - (legacyPage - 1) * upstreamSize)
         };
+    }
+
+    // One upstream slice, already turned into channel items and enriched from what the catalog has cached.
+    // Nothing here reaches a provider for details: that work belongs to the warm task.
+    private async Task<CatalogSlice<ChannelItemInfo>> PageAsync(string scope, string category, int offset, int limit, int upstreamSize, CancellationToken ct)
+    {
+        if (scope == "catalog")
+            return await CatalogPagination.SliceAsync<ChannelItemInfo>(offset, limit, upstreamSize, 1000, async number =>
+            {
+                var data = await anime.BrowseAsync(category, number, ct);
+                return (data.Items.Select(item => AnimeChannel.Item(item, category)).ToArray(), data.TotalCount);
+            }, ct);
+        return await CatalogPagination.SliceAsync<ChannelItemInfo>(offset, limit, upstreamSize, 500, async number =>
+        {
+            var data = await films.BrowseAsync(category, number, ct);
+            return (data.Items.Select(film => FilmChannel.Item(films.WithCachedDetails(film), category)).ToArray(), data.TotalCount);
+        }, ct);
     }
 }

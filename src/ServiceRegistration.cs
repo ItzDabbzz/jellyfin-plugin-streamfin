@@ -14,6 +14,9 @@ public sealed class ServiceRegistration : IPluginServiceRegistrator
     {
         services.AddHttpContextAccessor();
         services.AddSingleton<SafeHttp>();
+        services.AddSingleton<ChannelItemWriter>();
+        services.AddSingleton<ExternalTagCache>();
+        services.AddSingleton<CatalogWarmLibrary>();
         // One bounded store behind every catalog cache, so the settings page can report and clear all of them.
         services.AddSingleton<CatalogCache>();
         services.AddSingleton<AniListCatalog>();
