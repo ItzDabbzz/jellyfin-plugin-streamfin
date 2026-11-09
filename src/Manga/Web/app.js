@@ -597,20 +597,30 @@
         scheduled = false; if (typeof ApiClient === 'undefined' || !ApiClient.accessToken()) return;
         // Jellyfin 12.4 uses a Material UI toolbar; older 10.x builds use .headerRight.
         // SyncPlay's button only renders when SyncPlay is available, so it cannot be the only anchor.
+        // One button for the whole page. The anchor changes as SyncPlay or Cast render, and some builds have both header
+        // layouts, so the check is page-wide: extra copies are removed and a button in the wrong place is moved.
         const toolbar = document.querySelector('header .MuiToolbar-root') ?? document.querySelector('.MuiToolbar-root');
-        const actions = toolbar ? headerActions(toolbar) : null;
-        if (actions && !actions.querySelector('[data-streamfin-manga-header]')) {
-            const entry = element('button', 'MuiButtonBase-root MuiIconButton-root MuiIconButton-colorInherit MuiIconButton-sizeLarge jm-header-icon');
-            entry.type = 'button'; entry.dataset.streamfinMangaHeader = '1'; entry.title = 'StreamFin Manga'; entry.setAttribute('aria-label', 'StreamFin Manga');
-            entry.innerHTML = '<svg class="MuiSvgIcon-root MuiSvgIcon-fontSizeMedium" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path fill="currentColor" d="M18 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2zm0 18H6V4h2v8l2.5-1.5L13 12V4h5v16z"></path></svg>';
-            entry.onclick = () => open('library');
-            actions.prepend(entry);
+        const target = toolbar ? headerActions(toolbar) : document.querySelector('.skinHeader .headerRight, .headerRight, .appHeader .headerActions');
+        const existing = [...document.querySelectorAll('[data-streamfin-manga-header]')];
+        existing.slice(1).forEach(extra => extra.remove());
+        if (!target) return;
+        const legacy = !toolbar;
+        let entry = existing[0];
+        if (entry && (entry.dataset.streamfinMangaHeader === 'legacy') !== legacy) { entry.remove(); entry = undefined; }
+        if (!entry) {
+            if (legacy) {
+                entry = button('', () => open('library')); entry.className = 'paper-icon-button-light headerButton headerButtonRight emby-button jm-header-icon';
+                const glyph = element('span', 'material-icons notranslate', 'menu_book'); glyph.setAttribute('aria-hidden', 'true'); entry.append(glyph);
+            } else {
+                entry = element('button', 'MuiButtonBase-root MuiIconButton-root MuiIconButton-colorInherit MuiIconButton-sizeLarge jm-header-icon');
+                entry.type = 'button';
+                entry.innerHTML = '<svg class="MuiSvgIcon-root MuiSvgIcon-fontSizeMedium" focusable="false" aria-hidden="true" viewBox="0 0 24 24"><path fill="currentColor" d="M18 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2zm0 18H6V4h2v8l2.5-1.5L13 12V4h5v16z"></path></svg>';
+                entry.onclick = () => open('library');
+            }
+            entry.dataset.streamfinMangaHeader = legacy ? 'legacy' : 'toolbar'; entry.title = 'StreamFin Manga'; entry.setAttribute('aria-label', 'StreamFin Manga');
         }
-        for (const parent of document.querySelectorAll('.skinHeader .headerRight, .headerRight, .appHeader .headerActions')) {
-            if (parent.querySelector('[data-streamfin-manga-header]')) continue;
-            const entry = button('', () => open('library')); entry.className = 'paper-icon-button-light headerButton headerButtonRight emby-button jm-header-icon'; entry.dataset.streamfinMangaHeader = '1'; entry.title = 'StreamFin Manga'; entry.setAttribute('aria-label', 'StreamFin Manga');
-            const glyph = element('span', 'material-icons notranslate', 'menu_book'); glyph.setAttribute('aria-hidden', 'true'); entry.append(glyph); parent.prepend(entry);
-        }
+        // Only move when the parent is wrong; reordering inside it would fight other plugins' header buttons.
+        if (entry.parentNode !== target) target.prepend(entry);
     }
     const observer = new MutationObserver(() => { if (!scheduled) { scheduled = true; setTimeout(mountNavigation, 150); } }); observer.observe(document.documentElement, { childList: true, subtree: true });
     window.addEventListener('popstate', () => { if (root && root.dataset.embedded !== '1') close(false); });
