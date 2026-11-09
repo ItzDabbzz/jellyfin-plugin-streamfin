@@ -24,7 +24,7 @@ public sealed class AnimeChannel(AniListCatalog catalog, SourceRegistry sources,
     public string Name => "Anime";
     public string Description => "StreamFin · Browse anime and stream Japanese audio with English subtitles.";
     public string DataVersion => "streamfin-10-" + SourceRegistry.CacheKey + "-" + AniListCatalog.PolicyKey + "-" + (Plugin.Instance?.Configuration.CacheRevision ?? 0);
-    public string HomePageUrl => "https://github.com/mmrmagno/jellyfin-plugin-streamfin";
+    public string HomePageUrl => "https://github.com/ItzDabbzz/jellyfin-plugin-streamfin";
     public ChannelParentalRating ParentalRating => ChannelParentalRating.GeneralAudience;
     public bool IsEnabledFor(string userId) => Guid.TryParse(userId, out var id) && Plugin.Allows(id);
     // Jellyfin keeps channel listings on disk under this key. DataVersion is part of it so a new plugin build (or a

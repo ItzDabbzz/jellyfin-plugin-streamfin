@@ -17,7 +17,7 @@ public sealed class MusicRadio(SafeHttp http, MusicCatalog catalog, CatalogCache
     public const string ListenBrainzHost = "labs.api.listenbrainz.org";
     public const string LastFmHost = "ws.audioscrobbler.com";
     // MusicBrainz asks for at most one request a second and a User-Agent that says whom to contact.
-    public const string ContactAgent = "StreamFin/0.7 ( https://github.com/mmrmagno/jellyfin-plugin-streamfin )";
+    public const string ContactAgent = "StreamFin/0.7 ( https://github.com/ItzDabbzz/jellyfin-plugin-streamfin )";
     private const string Algorithm = "session_based_days_7500_session_300_contribution_5_threshold_10_limit_100_filter_True_skip_30";
     private const int ArtistLimit = 6;
     // Building a radio may wait this long for the catalog budget to have room, and no longer.

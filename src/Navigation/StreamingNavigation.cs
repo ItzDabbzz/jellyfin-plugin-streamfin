@@ -23,7 +23,7 @@ public sealed class HubChannel : IChannel, IHasCacheKey
     public string Description => "Browse online anime, movies, TV shows and music.";
     public string DataVersion => "streamfin-hub-1-" + SourceRegistry.AnyEnabled + "-" + FilmChannel.IsAvailable + "-" + MusicChannel.IsAvailable
         + "-" + (Plugin.Instance?.Configuration.CacheRevision ?? 0);
-    public string HomePageUrl => "https://github.com/mmrmagno/jellyfin-plugin-streamfin";
+    public string HomePageUrl => "https://github.com/ItzDabbzz/jellyfin-plugin-streamfin";
     public ChannelParentalRating ParentalRating => ChannelParentalRating.GeneralAudience;
     public static bool Enabled => Plugin.Instance?.Configuration is { Enabled: true } && StreamingNavigation.Mode is "Hub" or "Both";
     public bool IsEnabledFor(string userId) => Enabled && Guid.TryParse(userId, out var id) && Plugin.Allows(id);

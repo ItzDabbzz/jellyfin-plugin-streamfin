@@ -16,7 +16,7 @@ version = ET.parse(root / 'src/StreamFin.csproj').findtext('.//Version')
 manifest = {
     'guid': 'a74fdb2e-938f-483b-b2ef-f527e14ff724',
     'name': 'StreamFin', 'description': DESCRIPTION, 'overview': OVERVIEW,
-    'owner': 'mmrmagno', 'category': 'Channels', 'version': version, 'targetAbi': TARGET_ABI,
+    'owner': 'ItzDabbzz (Forked from mmrmagno)', 'category': 'Channels', 'version': version, 'targetAbi': TARGET_ABI,
     'imagePath': 'streamfin.png', 'status': 'Active', 'autoUpdate': True,
 }
 (output / 'meta.json').write_text(json.dumps(manifest, indent=2) + '\n')

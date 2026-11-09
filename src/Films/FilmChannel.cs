@@ -30,7 +30,7 @@ public sealed class FilmChannel(TmdbCatalog catalog, FlixSource flix, StreamRela
     public string Name => ChannelName;
     public string Description => "StreamFin · Browse movies and TV and stream them online.";
     public string DataVersion => "streamfin-film-2-" + IsAvailable + "-" + (Plugin.Instance?.Configuration.CacheRevision ?? 0);
-    public string HomePageUrl => "https://github.com/mmrmagno/jellyfin-plugin-streamfin";
+    public string HomePageUrl => "https://github.com/ItzDabbzz/jellyfin-plugin-streamfin";
     public ChannelParentalRating ParentalRating => ChannelParentalRating.GeneralAudience;
     public bool IsEnabledFor(string userId) => IsAvailable && Guid.TryParse(userId, out var id) && Plugin.Allows(id);
     public string GetCacheKey(string? userId) => $"{userId}-{DateTime.UtcNow.Ticks / TimeSpan.FromMinutes(Math.Clamp(Plugin.Instance?.Configuration.MetadataCacheMinutes ?? 60, 1, 1440)).Ticks}";
