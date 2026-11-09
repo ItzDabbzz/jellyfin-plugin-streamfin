@@ -1,4 +1,4 @@
-<p align="center"><img src="assets/banner.png" alt="StreamFin" width="600"></p>
+<p align="center"><img src="assets/banner.png" alt="JellySteamHub" width="600"></p>
 
 <p align="center"><b>Anime, movies, TV, music and manga in Jellyfin — streamed, not stored.</b></p>
 
@@ -15,6 +15,7 @@
 
 <p align="center">
   <a href="#install">Install</a> ·
+  <a href="#screenshots">Screenshots</a> ·
   <a href="#features">Features</a> ·
   <a href="#settings">Settings</a> ·
   <a href="#subsonic-apps">Subsonic</a> ·
@@ -24,7 +25,7 @@
 
 ## What it is
 
-StreamFin adds four channels to Jellyfin. Catalogs supply the titles; video, audio and manga pages are fetched when you press play or open a chapter. Everything else behaves like a normal library — progress, resume, subtitles, search and user access.
+JellySteamHub adds four channels to Jellyfin. Catalogs supply the titles; video, audio and manga pages are fetched when you press play or open a chapter. Everything else behaves like a normal library — progress, resume, subtitles, search and user access.
 
 | | Channel | What you get |
 | --- | --- | --- |
@@ -34,6 +35,33 @@ StreamFin adds four channels to Jellyfin. Catalogs supply the titles; video, aud
 | 📖 | **Manga** | 90 sources · CBZ downloads into a Jellyfin library · built-in reader |
 
 Nothing is downloaded ahead of time. The only media kept on disk is the song cache and the manga you asked for.
+
+## Screenshots
+
+<p align="center">
+  <img src=".github/assets/streaming_hub.png" alt="Streaming Hub channel with Anime, Movies, Music and TV Shows" width="900">
+  <br>
+  <i>The hub, if you prefer one entry point instead of four channels.</i>
+</p>
+
+<p align="center">
+  <img src=".github/assets/streaming_anime.jpg" alt="Anime channel grid with posters, years and ratings" width="900">
+  <br>
+  <i>Anime: AniList covers, years and scores, straight into seasons and providers.</i>
+</p>
+
+<table>
+  <tr>
+    <td width="50%"><img src=".github/assets/streaming_movies.jpg" alt="Movies channel"><br><i>Movies &amp; TV, with genres, ratings and certification.</i></td>
+    <td width="50%"><img src=".github/assets/streaming_tv.jpg" alt="TV channel"><br><i>Shows open into seasons and episodes.</i></td>
+  </tr>
+</table>
+
+<p align="center">
+  <img src=".github/assets/continue_watching.png" alt="Continue watching row filled from the channels" width="600">
+  <br>
+  <i>Watch progress is Jellyfin's own, so the home screen fills up like any library.</i>
+</p>
 
 ## Features
 
@@ -66,12 +94,18 @@ Nothing is downloaded ahead of time. The only media kept on disk is the song cac
 - **Sources** — 90 in the built-in catalog, 7 on by default. Each source has its own pacing, priority, download limit and a test button.
 - **Search & request** — search every enabled source, request a series, and monitor it for new chapters.
 - **Downloads** — CBZ archives into a folder your Jellyfin manga or books library reads. Optional AVIF conversion, a 50 GiB storage budget by default, retry/pause/cancel.
-- **Reader** — the Manga tab in the StreamFin settings page, plus an optional header shortcut through the File Transformation plugin. Progress and bookmarks are per user.
+- **Reader** — the Manga tab in the JellySteamHub settings page, plus an optional header shortcut through the File Transformation plugin. Progress and bookmarks are per user.
 - **Metadata** — an optional ComicVine key adds publisher, year, credits and summary to `ComicInfo.xml`.
+
+### Metadata and artwork
+
+- **Real metadata** — ratings, genres, studios, tags, cast and directors, certification, premiere dates and IMDb / TMDB / AniList / MyAnimeList ids are written onto the Jellyfin items, so Jellyfin Enhanced, Trakt-style plugins and the native detail page all see them.
+- **Artwork** — poster plus backdrop, thumb and title logo where the provider has one, cast photos from TMDB, and AniList banners behind an anime title. Channel listings only carry a poster by themselves; the rest is filled in when a title is written.
+- **Written at warm-up** — the scheduled task materialises the first page of each catalogue into Jellyfin at startup, so cards arrive with their metadata already attached instead of filling in as you open them.
 
 ### Everywhere
 
-- **Jellyfin search** — online results appear beside library results, tagged `Streamable` and `StreamFin`.
+- **Jellyfin search** — online results appear beside library results, tagged `StreamFin` so Jellyfin Enhanced shows its **Streamable** badge.
 - **Layout** — separate channels, one hub, or both; an optional **Stream online** entry inside a local library.
 - **Access** — nobody sees anything until ticked; an app password alone grants nothing.
 - **Subsonic** — the music channel speaks OpenSubsonic, for Symfonium, Feishin, Tempo and friends.
@@ -84,8 +118,8 @@ Nothing is downloaded ahead of time. The only media kept on disk is the song cac
    ```
    https://github.com/ItzDabbzz/jellyfin-plugin-streamfin/releases/latest/download/manifest.json
    ```
-2. Install **StreamFin** from the catalog (under **Channels**), then restart Jellyfin.
-3. Open **Dashboard › Plugins › StreamFin**, turn it on, and tick the users allowed in.
+2. Install **JellySteamHub** from the catalog (under **Channels**), then restart Jellyfin.
+3. Open **Dashboard › Plugins › JellySteamHub**, turn it on, and tick the users allowed in.
 4. For **Movies & TV**, paste a free [TMDB API key](https://www.themoviedb.org/settings/api).
 5. Add any of the extras below.
 
@@ -105,9 +139,9 @@ The channels appear on the home screen and in the sidebar. If one is missing, ch
 The web app gives channels a generic icon. Make an API key under **Dashboard › API Keys**, then run this from a clone:
 
 ```sh
-JELLYFIN_TOKEN=... python3 scripts/web-icon.py --url https://your.jellyfin --channel Anime
-JELLYFIN_TOKEN=... python3 scripts/web-icon.py --url https://your.jellyfin --channel "Movies & TV"
-JELLYFIN_TOKEN=... python3 scripts/web-icon.py --url https://your.jellyfin --channel Music
+JELLYFIN_TOKEN=[redacted] python3 scripts/web-icon.py --url https://your.jellyfin --channel Anime
+JELLYFIN_TOKEN=[redacted] python3 scripts/web-icon.py --url https://your.jellyfin --channel "Movies & TV"
+JELLYFIN_TOKEN=[redacted] python3 scripts/web-icon.py --url https://your.jellyfin --channel Music
 ```
 
 </details>
@@ -123,7 +157,9 @@ Everything lives on one page, in six sections:
 | **Playback & cache** | Song cache size · next-song prefetch · catalog cache lifetime · favourites folder |
 | **Manga** | Storage folder and Jellyfin library · ComicVine key · storage budget · check interval · AVIF · concurrency · per-source pacing |
 | **User access** | One card per user: access and Subsonic app passwords |
-| **Maintenance** | Clear caches · warm catalogs · update YouTube tools |
+| **Maintenance** | Clear caches · refresh catalogs · update YouTube tools |
+
+Two scheduled tasks do the background work and can be run by hand from **Dashboard › Scheduled Tasks**: **Refresh JellySteamHub catalogs** (startup and every six hours — warms the catalogues and writes their titles into Jellyfin) and **Clear JellySteamHub caches** (a repair action: empties every in-memory cache and makes Jellyfin fetch channel items again).
 
 ## Subsonic apps
 
@@ -136,6 +172,8 @@ In the settings under **User access › Subsonic apps**, turn the API on and pre
 | Server | `https://your.jellyfin/StreamFin` |
 | Username | the Jellyfin username |
 | Password | the app password, not the Jellyfin one |
+
+The address keeps the historical `/StreamFin` path so existing app profiles keep working.
 
 The catalog has no list of everything, so the library an app syncs is yours: what you played, starred or put in a playlist, plus every album of the artists you star or keep playing. Ratings, play counts and the play queue live on the server, so another device picks up where you stopped.
 
@@ -168,28 +206,30 @@ CI does the same on every push, plus CodeQL, a secret scan over the whole histor
 The version lives in one place: `<Version>` in `src/StreamFin.csproj`. Bump it, commit, then tag the commit with the same version prefixed by `v`. Pushing the tag publishes the release.
 
 ```sh
-# 1. src/StreamFin.csproj: <Version>0.12.0.9</Version>
-git commit -am "chore: bump version to 0.12.0.9"
+# 1. src/StreamFin.csproj: <Version>0.13.0.0</Version>
+git commit -am "chore: bump version to 0.13.0.0"
 
 # 2. annotated tag - its body becomes the release notes and the manifest changelog
-git tag -a v0.12.0.9 -m "StreamFin 0.12.0.9" -m "- fix: ..." -m "- feat: ..."
+git tag -a v0.13.0.0 -m "JellySteamHub 0.13.0.0" -m "- fix: ..." -m "- feat: ..."
 
 # 3. publish
 git push origin main
-git push origin v0.12.0.9
+git push origin v0.13.0.0
 ```
 
 The release workflow rejects a tag that does not match the csproj version. On a match it runs the release checks and the tests, builds the zip, signs its provenance, appends the version to `manifest.json` (starting from the previous release's copy) and publishes the GitHub release. Do not edit or commit `manifest.json` by hand, and do not push a `v*` tag you do not want released.
 
 ## Why this fork
 
-Upstream is [mmrmagno/StreamFin](https://github.com/mmrmagno/jellyfin-plugin-streamfin). This fork reorganizes the source layer for easier maintenance and adds manga — downloading, managing and reading it next to the streaming channels.
+Upstream is [mmrmagno/StreamFin](https://github.com/mmrmagno/jellyfin-plugin-streamfin). This fork reorganizes the source layer for easier maintenance, adds manga — downloading, managing and reading it next to the streaming channels — and carries the JellySteamHub name and UI.
+
+The assembly, plugin id, configuration file and `/StreamFin` API root keep their original names on purpose: changing them would orphan saved settings, app passwords and watch progress for anyone already running it.
 
 ## Credits
 
 The AnimeGG and AnimeHeaven adapters are adapted from the MIT-licensed [Seanime providers](https://github.com/Seanime-contributions/Seanime-Providers). The HiAnime flow follows [ani-cli](https://github.com/pystardust/ani-cli), written from scratch. FlixHQ is a port of my (mmrmagno) own downloader. Icons are from Material Design Icons. Details in [`THIRD_PARTY_NOTICES.txt`](THIRD_PARTY_NOTICES.txt).
 
-StreamFin hosts nothing. It plays what third-party sites already serve, and whether that is legal where you live is on you.
+JellySteamHub hosts nothing. It plays what third-party sites already serve, and whether that is legal where you live is on you.
 
 ## License
 

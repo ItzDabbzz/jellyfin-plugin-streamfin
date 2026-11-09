@@ -189,7 +189,7 @@ public sealed class MusicAudio(SafeHttp http, MusicCatalog catalog, MusicCache s
         if (lifetime > TimeSpan.Zero)
             Tickets.Set(ticket.TrackId, ticket, new MemoryCacheEntryOptions { Size = 1, AbsoluteExpirationRelativeToNow = lifetime });
         if (ticket.Source == "monochrome") health.LastTrack = ticket.Upstream;
-        logger.LogInformation("StreamFin music: {Track} plays from {Source} ({Container})", ticket.TrackId, ticket.Source, ticket.Container);
+        logger.LogInformation("JellySteamHub music: {Track} plays from {Source} ({Container})", ticket.TrackId, ticket.Source, ticket.Container);
         return ticket;
     }
 
@@ -258,7 +258,7 @@ public sealed class MusicAudio(SafeHttp http, MusicCatalog catalog, MusicCache s
                 var json = await tools.RunAsync(YtDlp.SearchArguments(deno, $"{track.Artists[0].Name} - {track.Title}"), TimeSpan.FromSeconds(20), ct);
                 var best = Best(ParseSearch(json), track);
                 video = best?.Id ?? "";
-                if (best is null) logger.LogInformation("StreamFin music: YouTube has no copy of {Track} that matches its title, artist and length", track.Id);
+                if (best is null) logger.LogInformation("JellySteamHub music: YouTube has no copy of {Track} that matches its title, artist and length", track.Id);
                 // A song YouTube does not have is not searched for again for a while.
                 Matches.Set(track.Id, video, new MemoryCacheEntryOptions { Size = 1, AbsoluteExpirationRelativeToNow = best is null ? TimeSpan.FromMinutes(30) : TimeSpan.FromDays(1) });
             }
@@ -291,7 +291,7 @@ public sealed class MusicAudio(SafeHttp http, MusicCatalog catalog, MusicCache s
         catch (Exception ex)
         {
             if (ex is ToolFailedException) youtube.Failure(DateTime.UtcNow, ex.Message);
-            logger.LogInformation("StreamFin music: YouTube has no copy of {Track} ({Reason})", track.Id, ex is ProviderException ? ex.Message : ex.GetType().Name);
+            logger.LogInformation("JellySteamHub music: YouTube has no copy of {Track} ({Reason})", track.Id, ex is ProviderException ? ex.Message : ex.GetType().Name);
             return null;
         }
     }

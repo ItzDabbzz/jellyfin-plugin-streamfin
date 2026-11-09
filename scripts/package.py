@@ -9,13 +9,13 @@ output = root / 'artifacts/plugin'
 output.mkdir(parents=True, exist_ok=True)
 for name in ['Jellyfin.Plugin.StreamFin.dll', 'AngleSharp.dll']:
     shutil.copy2(root / 'src/bin/Release/net10.0' / name, output / name)
-DESCRIPTION = 'Anime, movies and TV from online sources, as Jellyfin channels.'
-OVERVIEW = 'Stream instead of storing: browse Anime and Movies & TV, play in Jellyfin\'s own player.'
+DESCRIPTION = 'Anime, movies, TV, lossless music and manga from online sources, as Jellyfin channels.'
+OVERVIEW = 'Stream and read instead of storing: anime, movies, TV, music and manga inside Jellyfin.'
 TARGET_ABI = '12.3.0.0'
 version = ET.parse(root / 'src/StreamFin.csproj').findtext('.//Version')
 manifest = {
     'guid': 'a74fdb2e-938f-483b-b2ef-f527e14ff724',
-    'name': 'StreamFin', 'description': DESCRIPTION, 'overview': OVERVIEW,
+    'name': 'JellySteamHub', 'description': DESCRIPTION, 'overview': OVERVIEW,
     'owner': 'ItzDabbzz (Forked from mmrmagno)', 'category': 'Channels', 'version': version, 'targetAbi': TARGET_ABI,
     'imagePath': 'streamfin.png', 'status': 'Active', 'autoUpdate': True,
 }

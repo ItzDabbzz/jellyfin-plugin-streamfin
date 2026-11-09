@@ -176,7 +176,7 @@ public sealed class MusicSaver(SafeHttp http, MusicCatalog catalog, MusicLibrary
         }
         catch (Exception ex) when (ex is ProviderException or HttpRequestException or IOException or UnauthorizedAccessException or System.Text.Json.JsonException or TaskCanceledException)
         {
-            logger.LogWarning("StreamFin could not star a track from a favourite ({ErrorType})", ex.GetType().Name);
+            logger.LogWarning("JellySteamHub could not star a track from a favourite ({ErrorType})", ex.GetType().Name);
         }
     }
 
@@ -211,7 +211,7 @@ public sealed class MusicSaver(SafeHttp http, MusicCatalog catalog, MusicLibrary
             }
             catch (Exception ex) when (ex is ProviderException or HttpRequestException or IOException or UnauthorizedAccessException or System.Text.Json.JsonException or TaskCanceledException)
             {
-                logger.LogWarning("StreamFin could not star an album from a favourite ({ErrorType})", ex.GetType().Name);
+                logger.LogWarning("JellySteamHub could not star an album from a favourite ({ErrorType})", ex.GetType().Name);
             }
         });
     }
@@ -244,13 +244,13 @@ public sealed class MusicSaver(SafeHttp http, MusicCatalog catalog, MusicLibrary
             catch (OperationCanceledException) when (stop.IsCancellationRequested) { return; }
             catch (DiskFullException ex) when (next is var (user, save))
             {
-                logger.LogWarning("StreamFin music library: the disk is nearly full, saving paused");
+                logger.LogWarning("JellySteamHub music library: the disk is nearly full, saving paused");
                 try { await SetAsync(user, save.ReleaseId, s => s with { State = Queued, Note = ex.Message }); } catch (Exception) { }
                 await wake.WaitAsync(TimeSpan.FromMinutes(30), stop).ContinueWith(_ => { }, TaskScheduler.Default);
             }
             catch (Exception ex)
             {
-                logger.LogWarning("StreamFin could not save an album to the music library ({ErrorType})", ex.GetType().Name);
+                logger.LogWarning("JellySteamHub could not save an album to the music library ({ErrorType})", ex.GetType().Name);
                 if (next is not var (user, save)) { await Task.Delay(TimeSpan.FromMinutes(1), stop).ContinueWith(_ => { }, TaskScheduler.Default); continue; }
                 try { await SetAsync(user, save.ReleaseId, s => s with { State = Failed, Note = ex is ProviderException ? ex.Message : "Saving failed. Star the album again to retry." }); }
                 catch (Exception) { await Task.Delay(TimeSpan.FromMinutes(1), stop).ContinueWith(_ => { }, TaskScheduler.Default); }
@@ -311,7 +311,7 @@ public sealed class MusicSaver(SafeHttp http, MusicCatalog catalog, MusicLibrary
             await SetAsync(user, save.ReleaseId, s => s with { Saved = done });
         }
         await SetAsync(user, save.ReleaseId, s => s with { State = Saved, Note = null, Finished = DateTime.UtcNow });
-        logger.LogInformation("StreamFin saved album {Release} to the music library", save.ReleaseId);
+        logger.LogInformation("JellySteamHub saved album {Release} to the music library", save.ReleaseId);
         return true;
     }
 
@@ -397,7 +397,7 @@ public sealed class MusicSaver(SafeHttp http, MusicCatalog catalog, MusicLibrary
                 if (response.StatusCode == HttpStatusCode.TooManyRequests)
                 {
                     if (++busy >= BusyLimit) throw new ProviderException("The music catalog kept refusing downloads. Star the album again later to retry.");
-                    logger.LogInformation("StreamFin music library: the catalog is busy, waiting {Minutes} minutes", Busy.TotalMinutes);
+                    logger.LogInformation("JellySteamHub music library: the catalog is busy, waiting {Minutes} minutes", Busy.TotalMinutes);
                     await Task.Delay(Busy, ct);
                     continue;
                 }
@@ -426,7 +426,7 @@ public sealed class MusicSaver(SafeHttp http, MusicCatalog catalog, MusicLibrary
                 var progressed = size > 0 && File.Exists(part) && new FileInfo(part).Length > from;
                 if (progressed) broken = 0;
                 else if (++broken >= 3) throw;
-                logger.LogInformation("StreamFin music library: a download broke off ({ErrorType}), {Action}", ex.GetType().Name, progressed ? "resuming" : "trying again");
+                logger.LogInformation("JellySteamHub music library: a download broke off ({ErrorType}), {Action}", ex.GetType().Name, progressed ? "resuming" : "trying again");
                 await Task.Delay(progressed ? TimeSpan.FromSeconds(5) : TimeSpan.FromMinutes(1), ct);
             }
         }

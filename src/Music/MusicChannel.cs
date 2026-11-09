@@ -23,7 +23,7 @@ public sealed class MusicChannel(MusicCatalog catalog, MusicAudio sources, Music
     public const string ChannelName = "Music";
     public static bool IsAvailable => Plugin.Instance?.Configuration is { Enabled: true, MusicEnabled: true } && MusicCatalog.Api is not null;
     public string Name => ChannelName;
-    public string Description => "StreamFin · Browse popular artists, albums and songs, or use Jellyfin's search to find music online.";
+    public string Description => "JellySteamHub · Browse popular artists, albums and songs, or use Jellyfin's search to find music online.";
     public string DataVersion => "streamfin-music-2-" + IsAvailable + "-" + (Plugin.Instance?.Configuration.CacheRevision ?? 0);
     public string HomePageUrl => "https://github.com/ItzDabbzz/jellyfin-plugin-streamfin";
     public ChannelParentalRating ParentalRating => ChannelParentalRating.GeneralAudience;
@@ -90,13 +90,13 @@ public sealed class MusicChannel(MusicCatalog catalog, MusicAudio sources, Music
 
     public async Task<ChannelItemResult> GetChannelItems(InternalChannelItemQuery query, CancellationToken ct)
     {
-        if (query.UserId != Guid.Empty && !Plugin.Allows(query.UserId)) throw new UnauthorizedAccessException("StreamFin is not enabled for this account.");
+        if (query.UserId != Guid.Empty && !Plugin.Allows(query.UserId)) throw new UnauthorizedAccessException("JellySteamHub is not enabled for this account.");
         if (!IsAvailable) return Result([]);
         var id = query.FolderId ?? "";
         try { return await BrowseAsync(id, query.UserId, ct); }
         catch (Exception ex) when (ex is ProviderException or HttpRequestException or System.Text.RegularExpressions.RegexMatchTimeoutException or UriFormatException or System.Text.Json.JsonException or TaskCanceledException && !ct.IsCancellationRequested)
         {
-            logger.LogWarning("StreamFin music catalog request failed ({ErrorType})", ex.GetType().Name);
+            logger.LogWarning("JellySteamHub music catalog request failed ({ErrorType})", ex.GetType().Name);
             var message = ex is ProviderException ? ex.Message : "The music catalog is temporarily unavailable. Please try again later.";
             return Result([Folder(id + "/status", message, message)]);
         }
@@ -122,7 +122,7 @@ public sealed class MusicChannel(MusicCatalog catalog, MusicAudio sources, Music
         if (id.Length == 0) return Result(RootItems(MusicCatalog.Fallback));
         if (id is "popular/artists" or "popular/albums" or "popular/songs")
         {
-            if (!MusicCatalog.Fallback) return Result([Folder(id + "/status", "Music discovery is off", "Enable the Deezer metadata source in StreamFin settings to browse charts. Jellyfin's search remains available.")]);
+            if (!MusicCatalog.Fallback) return Result([Folder(id + "/status", "Music discovery is off", "Enable the Deezer metadata source in JellySteamHub settings to browse charts. Jellyfin's search remains available.")]);
             var popular = await catalog.PopularAsync(ct);
             IEnumerable<ChannelItemInfo> items = id switch
             {
@@ -245,8 +245,8 @@ public sealed class MusicChannel(MusicCatalog catalog, MusicAudio sources, Music
         var context = contexts.HttpContext;
         if (context is null) return [];
         var auth = await authorization.GetAuthorizationInfo(context);
-        if (!auth.IsAuthenticated || !Plugin.Allows(auth.UserId) || !IsAvailable) throw new UnauthorizedAccessException("StreamFin is not enabled for this account.");
-        if (ParseTrackId(id) is not var (releaseId, trackId)) throw new ProviderException("Invalid StreamFin track.");
+        if (!auth.IsAuthenticated || !Plugin.Allows(auth.UserId) || !IsAvailable) throw new UnauthorizedAccessException("JellySteamHub is not enabled for this account.");
+        if (ParseTrackId(id) is not var (releaseId, trackId)) throw new ProviderException("Invalid JellySteamHub track.");
         var user = auth.UserId;
         MusicTrack track;
         string album;
@@ -283,7 +283,7 @@ public sealed class MusicChannel(MusicCatalog catalog, MusicAudio sources, Music
             source.Name = $"FLAC · {stream.BitDepth} bit / {stream.SampleRate / 1000.0:0.#} kHz";
         if (track.Title.Length > 0)
             try { await store.RecordPlayAsync(user, track, album, ct); }
-            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { logger.LogWarning("StreamFin could not save music history ({ErrorType})", ex.GetType().Name); }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { logger.LogWarning("JellySteamHub could not save music history ({ErrorType})", ex.GetType().Name); }
         // Jellyfin treats an item with no runtime as fully played and drops its resume point.
         if (library.GetItemById(library.GetNewItemId(id + ChannelName + "16", typeof(Audio))) is Audio item
             && item.RunTimeTicks is not > 0 && source.RunTimeTicks is > 0)

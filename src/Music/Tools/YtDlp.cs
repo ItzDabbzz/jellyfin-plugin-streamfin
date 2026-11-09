@@ -84,14 +84,14 @@ public sealed class YtDlp(SafeHttp http, ILogger<YtDlp> logger)
             checkedTools = true;
             Problem = null;
             Version = version.Length > 40 ? version[..40] : version;
-            logger.LogInformation("StreamFin music: yt-dlp {Version} is ready for YouTube", version.Length > 40 ? version[..40] : version);
+            logger.LogInformation("JellySteamHub music: yt-dlp {Version} is ready for YouTube", version.Length > 40 ? version[..40] : version);
         }
         catch (Exception ex) when (ex is ProviderException or IOException or HttpRequestException or UnauthorizedAccessException or InvalidDataException
             || ex is OperationCanceledException && !ct.IsCancellationRequested)
         {
             checkedTools = false;
             Problem = ex is ProviderException ? ex.Message : $"The YouTube tools could not be set up ({ex.GetType().Name}).";
-            logger.LogWarning("StreamFin music: {Problem}", Problem);
+            logger.LogWarning("JellySteamHub music: {Problem}", Problem);
         }
         finally { Installing.Release(); }
     }
@@ -133,7 +133,7 @@ public sealed class YtDlp(SafeHttp http, ILogger<YtDlp> logger)
             var marker = expected + " " + await HashAsync(fresh, ct);
             File.Move(fresh, target, overwrite: true);
             await File.WriteAllTextAsync(target + ".sha256", marker, ct);
-            logger.LogInformation("StreamFin music: installed {Asset}, checksum verified", asset);
+            logger.LogInformation("JellySteamHub music: installed {Asset}, checksum verified", asset);
         }
         finally
         {
@@ -189,7 +189,7 @@ public sealed class YtDlp(SafeHttp http, ILogger<YtDlp> logger)
                 foreach (var gate in held) gate.Release();
             }
             await File.WriteAllTextAsync(marker, expected + " " + await FolderHashAsync(target, ct), ct);
-            logger.LogInformation("StreamFin music: installed {Asset}, checksum verified", asset);
+            logger.LogInformation("JellySteamHub music: installed {Asset}, checksum verified", asset);
         }
         finally
         {

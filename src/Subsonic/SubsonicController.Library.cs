@@ -300,7 +300,7 @@ public sealed partial class SubsonicController
         if (id == "1")
         {
             var (library, _) = await LibraryAsync();
-            return Success().One(new SubsonicNode("directory").Set("id", "1").Set("name", "StreamFin")
+            return Success().One(new SubsonicNode("directory").Set("id", "1").Set("name", "JellySteamHub")
                 .AddRange(Artists(library).OrderBy(a => SortName(a.Name), StringComparer.OrdinalIgnoreCase)
                     .Select(a => new SubsonicNode("child").Set("id", "ar-" + a.Id).Set("title", a.Name).Set("isDir", true).Set("coverArt", "ar-" + a.Id))));
         }

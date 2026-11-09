@@ -17,7 +17,7 @@ public sealed class FilmSearch(TmdbCatalog catalog, ILibraryManager library, Sea
 {
     // Jellyfin derives channel item IDs from external ID + channel name + "16".
     public const string FolderKey = "search" + FilmChannel.ChannelName + "16";
-    public string Name => "StreamFin Movies & TV";
+    public string Name => "JellySteamHub Movies & TV";
     public MetadataPluginType Type => MetadataPluginType.SearchProvider;
     public int Priority => 51;
     public Guid ChannelId => library.GetNewItemId("Channel " + FilmChannel.ChannelName, typeof(Channel));
@@ -89,7 +89,7 @@ public sealed class FilmSearch(TmdbCatalog catalog, ILibraryManager library, Sea
         catch (OperationCanceledException) when (ct.IsCancellationRequested) { return []; }
         catch (Exception ex) when (ex is ProviderException or HttpRequestException or System.Text.RegularExpressions.RegexMatchTimeoutException or UriFormatException or System.Text.Json.JsonException or OperationCanceledException && !ct.IsCancellationRequested)
         {
-            logger.LogWarning("StreamFin film search unavailable ({ErrorType}); local search remains available", ex.GetType().Name);
+            logger.LogWarning("JellySteamHub film search unavailable ({ErrorType}); local search remains available", ex.GetType().Name);
             return [];
         }
     }

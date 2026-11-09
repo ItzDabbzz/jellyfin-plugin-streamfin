@@ -24,15 +24,15 @@ public sealed partial class SubsonicController
         Response.Headers["Content-Security-Policy"] = "default-src 'none'; style-src 'unsafe-inline'";
         return Content($$$"""
             <!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-            <title>StreamFin music apps</title>
+            <title>JellySteamHub music apps</title>
             <style>body{font:16px/1.5 system-ui,sans-serif;max-width:36rem;margin:3rem auto;padding:0 1rem;color:#222;background:#fff}
             code{background:#eee;padding:.1rem .3rem;border-radius:.2rem;word-break:break-all}
             @media (prefers-color-scheme:dark){body{color:#ddd;background:#111}code{background:#333}}</style></head><body>
-            <h1>StreamFin music apps</h1>
+            <h1>JellySteamHub music apps</h1>
             <p>This address is for Subsonic music apps such as Symfonium, Feishin, Tempo or play:Sub, not for a browser.</p>
             <p>In the app, add a Subsonic or OpenSubsonic server with:</p>
             <ul><li>Server: <code>{{{address}}}</code></li><li>Username: your Jellyfin username</li>
-            <li>Password: the app password from the StreamFin settings, not your Jellyfin password</li></ul>
+            <li>Password: the app password from the JellySteamHub settings, not your Jellyfin password</li></ul>
             <p>{{{state}}}</p></body></html>
             """, "text/html; charset=utf-8");
     }

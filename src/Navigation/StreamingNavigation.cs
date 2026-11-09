@@ -15,13 +15,13 @@ namespace StreamFin;
 // because Jellyfin includes the channel name in every descendant's identity.
 public sealed class HubChannel : IChannel, IHasCacheKey
 {
-    public const string ChannelName = "StreamFin";
+    public const string ChannelName = "JellySteamHub";
     // Keep Name stable: Jellyfin derives the channel's identity from it.
     public static string DisplayName => NormalizeDisplayName(Plugin.Instance?.Configuration.StreamingLibraryName);
     public static string NormalizeDisplayName(string? value) => string.IsNullOrWhiteSpace(value) ? ChannelName : value.Trim();
     public string Name => ChannelName;
     public string Description => "Browse online anime, movies, TV shows and music.";
-    public string DataVersion => "streamfin-hub-2-" + SourceRegistry.AnyEnabled + "-" + FilmChannel.IsAvailable + "-" + MusicChannel.IsAvailable
+    public string DataVersion => "jellysteamhub-hub-3-" + SourceRegistry.AnyEnabled + "-" + FilmChannel.IsAvailable + "-" + MusicChannel.IsAvailable
         + "-" + (Plugin.Instance?.Configuration.CacheRevision ?? 0);
     public string HomePageUrl => "https://github.com/ItzDabbzz/jellyfin-plugin-streamfin";
     public ChannelParentalRating ParentalRating => ChannelParentalRating.GeneralAudience;

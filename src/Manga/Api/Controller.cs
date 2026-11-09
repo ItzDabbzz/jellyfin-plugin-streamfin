@@ -21,7 +21,7 @@ public sealed class MangaExceptionFilter : ExceptionFilterAttribute
         context.ExceptionHandled = true;
         // A series with no cover yet is normal; answer 404 without filling the log.
         if (context.Exception is not (FileNotFoundException or KeyNotFoundException))
-            context.HttpContext.RequestServices.GetService<Microsoft.Extensions.Logging.ILogger<MangaExceptionFilter>>()?.LogWarning(context.Exception, "StreamFin manga request failed");
+            context.HttpContext.RequestServices.GetService<Microsoft.Extensions.Logging.ILogger<MangaExceptionFilter>>()?.LogWarning(context.Exception, "JellySteamHub manga request failed");
     }
 }
 
@@ -61,7 +61,7 @@ public sealed class MangaController(Store store, MangaSourceRegistry sources, Co
     {
         var id = UserId(); var user = users.GetUserById(id)!; if (user.Permissions.Any(p => p.Kind == PermissionKind.IsAdministrator && p.Value)) return;
         var config = MangaHost.Options;
-        if (!config.Enabled) throw new UnauthorizedAccessException("StreamFin Manga is not enabled yet. An administrator can turn it on in the Manga settings.");
+        if (!config.Enabled) throw new UnauthorizedAccessException("JellySteamHub Manga is not enabled yet. An administrator can turn it on in the Manga settings.");
         if (config.DeniedUsers.Contains(id.ToString("N"), StringComparer.OrdinalIgnoreCase) || config.DeniedUsers.Contains(id.ToString(), StringComparer.OrdinalIgnoreCase)) throw new UnauthorizedAccessException("Manga access is disabled for your account.");
         if (!Guid.TryParse(config.LibraryId, out var libraryId) || libraries.GetItemById(libraryId) is not { } library || !library.IsVisible(user)) throw new UnauthorizedAccessException("You need access to the configured manga library.");
     }

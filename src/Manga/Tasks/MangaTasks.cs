@@ -26,11 +26,11 @@ public sealed class MangaMetadataTask(Store store, LibraryStorage storage, Cover
             catch (Exception ex) when (ex is not OperationCanceledException)
             {
                 failed++;
-                logger.LogWarning(ex, "StreamFin could not refresh manga metadata for {Series}", series[i].Series.Title);
+                logger.LogWarning(ex, "JellySteamHub could not refresh manga metadata for {Series}", series[i].Series.Title);
             }
             progress.Report(100.0 * (i + 1) / series.Count);
         }
-        logger.LogInformation("StreamFin refreshed manga metadata for {Count} series; {Failed} failed", series.Count, failed);
+        logger.LogInformation("JellySteamHub refreshed manga metadata for {Count} series; {Failed} failed", series.Count, failed);
     }
 
     public IEnumerable<TaskTriggerInfo> GetDefaultTriggers() => [];

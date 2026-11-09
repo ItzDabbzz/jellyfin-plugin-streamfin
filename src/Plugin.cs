@@ -10,7 +10,7 @@ public sealed class Configuration : BasePluginConfiguration
 {
     public bool Enabled { get; set; }
     public string StreamingNavigationMode { get; set; } = "Channels";
-    public string StreamingLibraryName { get; set; } = "StreamFin";
+    public string StreamingLibraryName { get; set; } = "JellySteamHub";
     public StreamingLibraryLink[] StreamingLibraryLinks { get; set; } = [];
     public string[] AllowedUserIds { get; set; } = [];
     // HiAnime. The name and the "zoko" source id are kept so saved settings and episode IDs survive.
@@ -67,15 +67,15 @@ public sealed class Plugin : BasePlugin<Configuration>, IHasWebPages
     public static readonly Guid PluginId = new("a74fdb2e-938f-483b-b2ef-f527e14ff724");
     public Plugin(IApplicationPaths paths, IXmlSerializer serializer) : base(paths, serializer) => Instance = this;
     public override Guid Id => PluginId;
-    public override string Name => "StreamFin";
-    public override string Description => "Anime, movies, TV and lossless music from online sources, as Jellyfin channels.";
+    public override string Name => "JellySteamHub";
+    public override string Description => "Anime, movies, TV, lossless music and manga from online sources, as Jellyfin channels.";
     // EnableInMainMenu puts StreamFin in the dashboard sidebar (Jellyfin 10.10+/12.x); without it the page is only
     // reachable from the plugin card's settings button. Keep one page per plugin: Jellyfin's sidebar adds an entry
     // for the plugin as well as for each page, so a second page makes StreamFin appear twice.
     public IEnumerable<PluginPageInfo> GetPages() => [new()
     {
         Name = "streamfin",
-        DisplayName = "StreamFin",
+        DisplayName = "JellySteamHub",
         EmbeddedResourcePath = "StreamFin.Configuration.html",
         EnableInMainMenu = true,
         MenuSection = "server",

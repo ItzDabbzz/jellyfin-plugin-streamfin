@@ -307,7 +307,7 @@ public sealed class MusicCache(SafeHttp http, ILogger<MusicCache> logger)
                         : response.StatusCode == HttpStatusCode.OK;
                     if (!whole || response.Content.Headers.ContentLength is not long size || size is <= 0 or > SongLimit)
                     {
-                        logger.LogInformation("StreamFin music cache: {Id} not kept, the catalog answered {Status}", id, (int)response.StatusCode);
+                        logger.LogInformation("JellySteamHub music cache: {Id} not kept, the catalog answered {Status}", id, (int)response.StatusCode);
                         if (response.StatusCode == HttpStatusCode.TooManyRequests) coolUntil = DateTime.UtcNow.AddMinutes(2);
                         return;
                     }
@@ -315,7 +315,7 @@ public sealed class MusicCache(SafeHttp http, ILogger<MusicCache> logger)
                 }
                 else if (response.StatusCode != HttpStatusCode.PartialContent || response.Content.Headers.ContentRange?.From != from)
                 {
-                    logger.LogInformation("StreamFin music cache: {Id} could not resume at byte {From}, the catalog answered {Status}", id, from, (int)response.StatusCode);
+                    logger.LogInformation("JellySteamHub music cache: {Id} could not resume at byte {From}, the catalog answered {Status}", id, from, (int)response.StatusCode);
                     if (response.StatusCode == HttpStatusCode.TooManyRequests) coolUntil = DateTime.UtcNow.AddMinutes(2);
                     failures++;
                     continue;
@@ -353,7 +353,7 @@ public sealed class MusicCache(SafeHttp http, ILogger<MusicCache> logger)
         }
         catch (Exception ex) when (ex is IOException or HttpRequestException or OperationCanceledException or ProviderException or UnauthorizedAccessException)
         {
-            logger.LogInformation("StreamFin music cache: {Id} not kept ({ErrorType})", id, ex.GetType().Name);
+            logger.LogInformation("JellySteamHub music cache: {Id} not kept ({ErrorType})", id, ex.GetType().Name);
         }
         finally
         {
@@ -366,7 +366,7 @@ public sealed class MusicCache(SafeHttp http, ILogger<MusicCache> logger)
             else if (entry.Replaces is { } old)
             {
                 Delete(old.Path);
-                logger.LogInformation("StreamFin music cache: {Id} is now kept as FLAC", id);
+                logger.LogInformation("JellySteamHub music cache: {Id} is now kept as FLAC", id);
             }
             lock (Gate)
             {
@@ -452,6 +452,6 @@ public sealed class MusicCache(SafeHttp http, ILogger<MusicCache> logger)
             if (Directory.Exists(incoming)) foreach (var path in Directory.EnumerateFiles(incoming)) Delete(path);
             if (trim) Trim();
         }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { logger.LogWarning("StreamFin music cache could not be read ({ErrorType})", ex.GetType().Name); }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { logger.LogWarning("JellySteamHub music cache could not be read ({ErrorType})", ex.GetType().Name); }
     }
 }

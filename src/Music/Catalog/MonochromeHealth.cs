@@ -50,7 +50,7 @@ public sealed class MonochromeProbe(MonochromeHealth health, MusicCatalog catalo
             catch (OperationCanceledException) when (stop.IsCancellationRequested) { return; }
             catch (Exception ex)
             {
-                logger.LogWarning("StreamFin music: the Monochrome check failed ({Reason})", ex.GetType().Name);
+                logger.LogWarning("JellySteamHub music: the Monochrome check failed ({Reason})", ex.GetType().Name);
                 await Task.Delay(TimeSpan.FromSeconds(30), stop).ContinueWith(_ => { }, TaskScheduler.Default);
             }
         }

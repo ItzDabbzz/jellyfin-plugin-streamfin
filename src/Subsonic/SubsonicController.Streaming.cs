@@ -84,7 +84,7 @@ public sealed partial class SubsonicController
                     && reopen is not null && resumes < 3)
                 {
                     resumes++;
-                    logger.LogInformation("StreamFin Subsonic: the catalog dropped a song after {Bytes} bytes, resuming", total);
+                    logger.LogInformation("JellySteamHub Subsonic: the catalog dropped a song after {Bytes} bytes, resuming", total);
                     input = await reopen(total) ?? throw new IOException("The catalog could not resume the song.", ex);
                     continue;
                 }
@@ -206,7 +206,7 @@ public sealed partial class SubsonicController
                 // Anything but the exact bytes asked for would splice the wrong audio into the song.
                 if (again.StatusCode == System.Net.HttpStatusCode.PartialContent && again.Content.Headers.ContentRange?.From == from)
                     return await again.Content.ReadAsStreamAsync(Ct);
-                logger.LogWarning("StreamFin Subsonic could not resume a song at byte {Byte}: the catalog answered {Status}", from, (int)again.StatusCode);
+                logger.LogWarning("JellySteamHub Subsonic could not resume a song at byte {Byte}: the catalog answered {Status}", from, (int)again.StatusCode);
                 return null;
             }
             try { await CopyAsync(input, Response.Body, long.MaxValue, Ct, fromStart && flac ? bytes => KeepHead(upstream, bytes, size, [track.Id, recording.Id]) : null, Reopen); }
@@ -389,7 +389,7 @@ public sealed partial class SubsonicController
                 abort.Cancel();
                 if (!process.HasExited) { try { process.Kill(entireProcessTree: true); } catch (InvalidOperationException) { } }
                 try { await feed; } catch (OperationCanceledException) { }
-                try { if (await errors is { Length: > 0 } text && process.ExitCode is not (0 or 255 or -9 or 137)) logger.LogWarning("StreamFin Subsonic transcode: {Error}", text.Length > 300 ? text[..300] : text); }
+                try { if (await errors is { Length: > 0 } text && process.ExitCode is not (0 or 255 or -9 or 137)) logger.LogWarning("JellySteamHub Subsonic transcode: {Error}", text.Length > 300 ? text[..300] : text); }
                 catch (Exception ex) when (ex is OperationCanceledException or InvalidOperationException) { }
             }
         }

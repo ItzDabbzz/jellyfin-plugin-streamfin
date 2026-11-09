@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html><head><title>StreamFin</title></head><body>
+<html><head><title>JellySteamHub</title></head><body>
 <div id="streamfinConfig" data-role="page" class="page type-interior pluginConfigurationPage" data-require="emby-select,emby-input,emby-button,emby-checkbox,paper-icon-button-light">
   <div data-role="content"><div class="content-primary">
     <style>
@@ -116,19 +116,19 @@
       #streamfinConfig .streamfinDownload .streamfinIconButton { width: 2em; height: 2em; min-height: 0; padding: 0; border: 0; background: transparent; }
       #streamfinConfig .streamfinDownload .streamfinIconButton .material-icons { font-size: 1.15em; }
     </style>
-    <h2>StreamFin</h2>
+    <h2>JellySteamHub</h2>
     <p class="streamfinIntro">Choose what appears in Jellyfin, connect your sources, and give each person access. Settings apply when you press Save; buttons that act on the server, such as clearing caches or manga downloads, run at once.</p>
-    <nav class="streamfinNav" aria-label="StreamFin settings sections">
+    <nav class="streamfinNav" aria-label="JellySteamHub settings sections">
       <a href="#streamfinNavigation">Navigation</a><a href="#streamfinSources">Sources</a><a href="#streamfinPlayback">Playback &amp; cache</a><a href="#streamfinManga">Manga</a><a href="#streamfinAccess">User access</a><a href="#streamfinMaintenance">Maintenance</a>
     </nav>
     <form id="streamfinForm">
       <section class="streamfinSection is-active" id="streamfinNavigation" aria-labelledby="streamfinNavigationTitle">
         <h3 id="streamfinNavigationTitle">Navigation</h3>
         <div class="streamfinCard">
-          <h4>StreamFin in Jellyfin</h4>
-          <label class="checkboxContainer"><input is="emby-checkbox" type="checkbox" id="streamfinEnabled"><span>Turn on StreamFin</span></label>
+          <h4>JellySteamHub in Jellyfin</h4>
+          <label class="checkboxContainer"><input is="emby-checkbox" type="checkbox" id="streamfinEnabled"><span>Turn on JellySteamHub</span></label>
           <div class="selectContainer"><label class="selectLabel" for="streamingNavigationMode">Show in Jellyfin</label><select is="emby-select" id="streamingNavigationMode" aria-describedby="streamfinNavigationHelp"><option value="Channels">Separate channels</option><option value="Hub">Streaming hub</option><option value="Both">Hub and separate channels</option></select><div id="streamfinNavigationHelp" class="fieldDescription">The streaming hub groups Anime, Movies, TV Shows and Music in one place. Switching keeps watch progress and resume positions.</div></div>
-          <div class="inputContainer" data-depends="streamingNavigationMode"><label class="inputLabel" for="streamingLibraryName">Streaming hub name</label><input is="emby-input" type="text" id="streamingLibraryName" placeholder="StreamFin"><div class="fieldDescription">Shown for the streaming hub. Leave blank to use StreamFin. Only used with the hub.</div></div>
+          <div class="inputContainer" data-depends="streamingNavigationMode"><label class="inputLabel" for="streamingLibraryName">Streaming hub name</label><input is="emby-input" type="text" id="streamingLibraryName" placeholder="JellySteamHub"><div class="fieldDescription">Shown for the streaming hub. Leave blank to use JellySteamHub. Only used with the hub.</div></div>
         </div>
         <div class="streamfinCard">
           <h4>Stream online inside your libraries</h4>
@@ -138,7 +138,7 @@
         <div class="streamfinCard">
           <h4>Jellyfin search</h4>
           <label class="checkboxContainer"><input is="emby-checkbox" type="checkbox" id="searchResultsEnabled"><span>Show online results in Jellyfin search</span></label>
-          <div class="fieldDescription checkboxFieldDescription">Anime, movies, TV and music found online appear beside your library results. Each one carries the <span class="streamfinTag">Streamable</span> and <span class="streamfinTag">StreamFin</span> tags, so it is easy to tell apart (Jellyfin Enhanced shows it as a card chip). Turning this off stops new results; titles already found stay in each channel's Search results folder.</div>
+          <div class="fieldDescription checkboxFieldDescription">Anime, movies, TV and music found online appear beside your library results. Each one carries the <span class="streamfinTag">Streamable</span> and <span class="streamfinTag">JellySteamHub</span> tags, so it is easy to tell apart (Jellyfin Enhanced shows it as a card chip). Turning this off stops new results; titles already found stay in each channel's Search results folder.</div>
         </div>
       </section>
       <section class="streamfinSection" id="streamfinSources" aria-labelledby="streamfinSourcesTitle">
@@ -182,7 +182,7 @@
               </li>
               <li data-source="youtube">
                 <div class="streamfinRow"><label class="checkboxContainer"><input is="emby-checkbox" type="checkbox" id="musicYouTube"><span>YouTube: AAC, about 128 kbps</span></label><button is="paper-icon-button-light" type="button" class="streamfinUp" title="Move up"><span class="material-icons keyboard_arrow_up" aria-hidden="true"></span></button><button is="paper-icon-button-light" type="button" class="streamfinDown" title="Move down"><span class="material-icons keyboard_arrow_down" aria-hidden="true"></span></button></div>
-                <div class="fieldDescription">YouTube's official audio, fetched whole into the song cache (a new song takes 15 to 20 seconds). Needs yt-dlp and deno: StreamFin downloads both from their official GitHub releases, checks their SHA-256, and updates them daily (Scheduled Tasks › Update YouTube tools).</div>
+                <div class="fieldDescription">YouTube's official audio, fetched whole into the song cache (a new song takes 15 to 20 seconds). Needs yt-dlp and deno: JellySteamHub downloads both from their official GitHub releases, checks their SHA-256, and updates them daily (Scheduled Tasks › Update YouTube tools).</div>
                 <div class="streamfinRow streamfinHealthRow"><p id="healthYouTube" class="streamfinHealth" role="status"></p><button is="emby-button" type="button" id="testYouTube" class="raised" data-source="youtube"><span>Test now</span></button></div>
                 <p id="testYouTubeResult" class="fieldDescription" role="status"></p>
               </li>
@@ -217,7 +217,7 @@
         <div class="streamfinCard" id="streamfinCatalogCache">
           <h4>Catalog cache</h4>
           <div class="inputContainer"><label class="inputLabel" for="streamfinCache">Keep catalog pages for (minutes)</label><input is="emby-input" type="number" id="streamfinCache" min="1" max="1440" required>
-            <div class="fieldDescription">Opened pages and title details stay in memory this long. Each category has its own budget, so a long anime list cannot push films or music out. The <strong>Refresh StreamFin catalogs</strong> task warms the first page of every category every six hours.</div></div>
+            <div class="fieldDescription">Opened pages and title details stay in memory this long. Each category has its own budget, so a long anime list cannot push films or music out. The <strong>Refresh JellySteamHub catalogs</strong> task warms the first page of every category every six hours.</div></div>
           <div id="streamfinCacheStats" class="streamfinStats" role="status">Reading cache…</div>
           <div class="streamfinActions">
             <button is="emby-button" type="button" id="streamfinClearCache" class="raised" disabled><span>Clear caches now</span></button>
@@ -235,11 +235,11 @@
         </div>
         <details class="streamfinCard streamfinAdvanced"><summary>Advanced music tools &amp; connections</summary>
           <div class="inputContainer"><label class="inputLabel" for="ytDlpPath">yt-dlp path (optional)</label><input is="emby-input" type="text" id="ytDlpPath" autocomplete="off" spellcheck="false">
-            <div class="fieldDescription">Use your own yt-dlp instead of the downloaded one. Leave empty to let StreamFin manage it.</div></div>
+            <div class="fieldDescription">Use your own yt-dlp instead of the downloaded one. Leave empty to let JellySteamHub manage it.</div></div>
           <div class="inputContainer"><label class="inputLabel" for="denoPath">deno path (optional)</label><input is="emby-input" type="text" id="denoPath" autocomplete="off" spellcheck="false">
-            <div class="fieldDescription">Use your own deno instead of the downloaded one. Leave empty to let StreamFin manage it.</div></div>
+            <div class="fieldDescription">Use your own deno instead of the downloaded one. Leave empty to let JellySteamHub manage it.</div></div>
           <div class="inputContainer"><label class="inputLabel" for="youTubeProxy">YouTube proxy (optional)</label><input is="emby-input" type="password" id="youTubeProxy" autocomplete="off" spellcheck="false" placeholder="http://user:password@vpn:8888">
-            <div class="fieldDescription">YouTube refuses many data centre addresses ("Sign in to confirm you're not a bot"). Every YouTube search and download then goes through this proxy instead, for example a VPN container next to Jellyfin: http or socks5, with a host and port. Nothing else StreamFin fetches uses it.</div></div>
+            <div class="fieldDescription">YouTube refuses many data centre addresses ("Sign in to confirm you're not a bot"). Every YouTube search and download then goes through this proxy instead, for example a VPN container next to Jellyfin: http or socks5, with a host and port. Nothing else JellySteamHub fetches uses it.</div></div>
           <div class="inputContainer"><label class="inputLabel" for="lastFmKey">Last.fm API key (optional)</label><input is="emby-input" type="password" id="lastFmKey" autocomplete="off" spellcheck="false">
             <div class="fieldDescription">Radio mixes an artist with similar ones, as ListenBrainz knows them. For artists ListenBrainz has no data on, a free key from last.fm/api is used as well.</div></div>
         </details>
@@ -324,7 +324,7 @@
       </section>
       <section class="streamfinSection" id="streamfinAccess" aria-labelledby="streamfinAccessTitle">
         <h3 id="streamfinAccessTitle">User access</h3>
-        <p class="fieldDescription">Nobody can see StreamFin channels or use its Subsonic API until they are allowed here. An app password alone does not grant access.</p>
+        <p class="fieldDescription">Nobody can see JellySteamHub channels or use its Subsonic API until they are allowed here. An app password alone does not grant access.</p>
         <div class="streamfinCard">
           <h4>Subsonic apps</h4>
           <label class="checkboxContainer"><input is="emby-checkbox" type="checkbox" id="subsonicEnabled"><span>Turn on the Subsonic API</span></label>
@@ -344,7 +344,7 @@
         <h3 id="streamfinMaintenanceTitle">Maintenance</h3>
         <div class="streamfinCard">
           <h4>Catalog &amp; search</h4>
-          <p class="fieldDescription">These apply now and affect every user. Scheduled work lives under <strong>Dashboard › Scheduled Tasks › StreamFin</strong>: Refresh StreamFin catalogs, Clear StreamFin caches, Update YouTube tools, Keep favourite songs ready, and the manga request, monitor and metadata tasks.</p>
+          <p class="fieldDescription">These apply now and affect every user. Scheduled work lives under <strong>Dashboard › Scheduled Tasks › JellySteamHub</strong>: Refresh JellySteamHub catalogs, Clear JellySteamHub caches, Update YouTube tools, Keep favourite songs ready, and the manga request, monitor and metadata tasks.</p>
           <div class="streamfinActions">
             <button is="emby-button" type="button" id="streamfinRefresh" class="raised" disabled><span>Refresh catalogs now</span></button>
             <button is="emby-button" type="button" id="streamfinClearSearch" class="raised" disabled><span>Clear search results</span></button>
@@ -409,7 +409,7 @@
           showSection(link.getAttribute('href').slice(1));
         });
         function loadMangaAssets() {
-          if (window.StreamFinManga) return Promise.resolve();
+          if (window.JellySteamHubManga) return Promise.resolve();
           if (mangaAssets) return mangaAssets;
           mangaAssets = new Promise(function (resolve, reject) {
             const style = document.createElement('link'); style.rel = 'stylesheet'; style.href = ApiClient.getUrl('StreamFin/Manga/assets/app.css'); document.head.append(style);
@@ -423,7 +423,7 @@
         async function openManga(tab) {
           const status = page.querySelector('#streamfinMangaOpenStatus');
           status.textContent = 'Opening manga…';
-          try { await loadMangaAssets(); window.StreamFinManga.open(tab); status.textContent = ''; }
+          try { await loadMangaAssets(); window.JellySteamHubManga.open(tab); status.textContent = ''; }
           catch (error) { status.textContent = 'Could not open the manga reader. ' + (error.message || 'Reload the page to retry.'); }
         }
         page.querySelector('#streamfinMangaOpen').addEventListener('click', function () { openManga('discover'); });
@@ -652,7 +652,7 @@
               monitorWrap.append(monitorLabel, monitor);
               actions.insertBefore(metadata, check); row.append(monitorWrap, info, actions); list.append(row);
             });
-          } catch (error) { console.error('StreamFin manga library', error); list.textContent = 'Could not load the manga library.'; status.textContent = whereFailed(error); }
+          } catch (error) { console.error('JellySteamHub manga library', error); list.textContent = 'Could not load the manga library.'; status.textContent = whereFailed(error); }
         }
         async function renderMangaDownloads() {
           const list = page.querySelector('#streamfinMangaDownloads');
@@ -703,7 +703,7 @@
               });
               row.append(info, actions); list.append(row);
             });
-          } catch (error) { console.error('StreamFin manga downloads', error); list.textContent = 'Could not load downloads.'; status.textContent = whereFailed(error); }
+          } catch (error) { console.error('JellySteamHub manga downloads', error); list.textContent = 'Could not load downloads.'; status.textContent = whereFailed(error); }
         }
         page.querySelector('#streamfinMangaLibraryRefresh').addEventListener('click', renderMangaLibrary);
         page.querySelector('#streamfinMangaImport').addEventListener('click', async function () {
@@ -800,7 +800,7 @@
             const [config, users] = await Promise.all([ApiClient.getPluginConfiguration(pluginId), ApiClient.getUsers()]);
             page.querySelector('#streamfinEnabled').checked = config.Enabled;
             page.querySelector('#streamingNavigationMode').value = ['Channels', 'Hub', 'Both'].includes(config.StreamingNavigationMode) ? config.StreamingNavigationMode : 'Channels';
-            page.querySelector('#streamingLibraryName').value = config.StreamingLibraryName ?? 'StreamFin';
+            page.querySelector('#streamingLibraryName').value = config.StreamingLibraryName ?? 'JellySteamHub';
             page.querySelector('#zokoEnabled').checked = config.ZokoEnabled !== false;
             page.querySelector('#animeGgEnabled').checked = config.AnimeGgEnabled;
             page.querySelector('#animeProviderFallback').checked = config.AnimeProviderFallback !== false;
@@ -838,7 +838,7 @@
             page.querySelector('#lastFmKey').value = config.LastFmApiKey || '';
             page.querySelector('#subsonicEnabled').checked = config.SubsonicEnabled === true;
             page.querySelector('#subsonicLossless').checked = config.SubsonicPreferLossless !== false;
-            page.querySelector('#subsonicAddress').textContent = ApiClient.serverAddress() + '/StreamFin';
+            page.querySelector('#subsonicAddress').textContent = ApiClient.serverAddress() + '/JellySteamHub';
             passwords = {};
             (config.SubsonicPasswords || []).forEach(entry => { passwords[entry.UserId.replaceAll('-', '').toLowerCase()] = entry.Password; });
             renderPasswords(users);
@@ -853,9 +853,9 @@
               head.append(name, state);
               const label = document.createElement('label'); label.className = 'checkboxContainer';
               const input = document.createElement('input'); input.type = 'checkbox'; input.setAttribute('is', 'emby-checkbox'); input.value = user.Id;
-              input.setAttribute('aria-label', 'Allow ' + user.Name + ' to use StreamFin');
+              input.setAttribute('aria-label', 'Allow ' + user.Name + ' to use JellySteamHub');
               input.checked = (config.AllowedUserIds || []).some(id => id.replaceAll('-', '').toLowerCase() === key);
-              const text = document.createElement('span'); text.textContent = 'Allow StreamFin access';
+              const text = document.createElement('span'); text.textContent = 'Allow JellySteamHub access';
               label.append(input, text);
               card.append(head, label);
               const passwordRow = Array.from(page.querySelector('#subsonicPasswords').children).find(row => row.dataset.userId === key);
@@ -874,13 +874,13 @@
             page.querySelector('#streamfinClearCache').disabled = false;
             page.querySelector('#streamfinWarmCache').disabled = false;
             page.querySelector('#streamfinStatus').textContent = config.Enabled && !(config.AllowedUserIds || []).length
-              ? 'No one has StreamFin access, so its channels are hidden. Allow people under User access.' : '';
+              ? 'No one has JellySteamHub access, so its channels are hidden. Allow people under User access.' : '';
             showSection(rememberedTab());
             await Promise.all([renderSaves(), renderHealth(), renderCache()]);
             clearInterval(healthTimer);
             healthTimer = setInterval(renderHealth, 10000);
           } catch (error) {
-            console.warn('StreamFin settings could not load:', error.message);
+            console.warn('JellySteamHub settings could not load:', error.message);
             page.querySelector('#streamfinStatus').textContent = 'Could not load settings. Reload this page before making changes.';
           } finally { Dashboard.hideLoadingMsg(); }
         });
@@ -892,7 +892,7 @@
             const config = await ApiClient.getPluginConfiguration(pluginId);
             config.Enabled = page.querySelector('#streamfinEnabled').checked;
             config.StreamingNavigationMode = page.querySelector('#streamingNavigationMode').value;
-            config.StreamingLibraryName = page.querySelector('#streamingLibraryName').value.trim() || 'StreamFin';
+            config.StreamingLibraryName = page.querySelector('#streamingLibraryName').value.trim() || 'JellySteamHub';
             if (libraryIds !== null) {
               const unavailable = (config.StreamingLibraryLinks || []).filter(link => !libraryIds.has(normalizeId(link.LibraryId)));
               config.StreamingLibraryLinks = unavailable.concat(Array.from(page.querySelectorAll('#streamfinLibraryLinks select')).filter(select => select.value).map(select => ({ LibraryId: select.dataset.libraryId, Category: select.value })));
@@ -943,9 +943,9 @@
               return;
             }
             config.AllowedUserIds = Array.from(page.querySelectorAll('#streamfinUsers input:checked'), input => input.value);
-            // With no one allowed every StreamFin channel disappears, which looks like the plugin is broken.
+            // With no one allowed every JellySteamHub channel disappears, which looks like the plugin is broken.
             if (config.Enabled && config.AllowedUserIds.length === 0
-              && !window.confirm('No one has StreamFin access, so its channels will be hidden for every user. Save anyway?')) {
+              && !window.confirm('No one has JellySteamHub access, so its channels will be hidden for every user. Save anyway?')) {
               page.querySelector('#streamfinStatus').textContent = 'Not saved. Allow at least one person under User access.';
               showSection('streamfinAccess');
               return;

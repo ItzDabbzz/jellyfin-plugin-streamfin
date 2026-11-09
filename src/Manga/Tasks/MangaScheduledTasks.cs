@@ -29,7 +29,7 @@ public sealed class MangaRequestTask(Store store, MangaService manga, ILogger<Ma
             {
                 // The error stays on the request so the page can show it instead of retrying forever.
                 store.Put("request-pending", id, request with { Error = ex.Message });
-                logger.LogWarning(ex, "StreamFin could not process a manga request");
+                logger.LogWarning(ex, "JellySteamHub could not process a manga request");
             }
             progress.Report(100.0 * (i + 1) / pending.Count);
         }
@@ -49,7 +49,7 @@ public sealed class MangaMonitorTask(MangaService manga, ILogger<MangaMonitorTas
     public async Task ExecuteAsync(IProgress<double> progress, CancellationToken cancellationToken)
     {
         progress.Report(0);
-        if (MangaHost.Options.Paused) { logger.LogInformation("StreamFin manga monitoring is paused"); return; }
+        if (MangaHost.Options.Paused) { logger.LogInformation("JellySteamHub manga monitoring is paused"); return; }
         await manga.Monitor(cancellationToken);
         progress.Report(100);
     }

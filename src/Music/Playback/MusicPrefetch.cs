@@ -34,7 +34,7 @@ public sealed class MusicPrefetch(MusicAudio audio, MusicCatalog catalog, MusicC
                     || !Enabled || !Plugin.Allows(user) || !songs.Keeps) return;
                 var recording = MusicCatalog.PreferExplicit ? await catalog.ExplicitAsync(next, limit.Token, TimeSpan.FromSeconds(4)) : next;
                 if (songs.Kept(recording.Id) is not null || MusicCache.Fetching(recording.Id)) return;
-                logger.LogInformation("StreamFin music: getting {Track} ready to play next", recording.Id);
+                logger.LogInformation("JellySteamHub music: getting {Track} ready to play next", recording.Id);
                 var ticket = await audio.ResolveAsync(recording, limit.Token);
                 if (ticket.Source == "monochrome") songs.Warm(ticket);
                 // YouTube ResolveAsync already downloads through yt-dlp into the cache.
@@ -43,7 +43,7 @@ public sealed class MusicPrefetch(MusicAudio audio, MusicCatalog catalog, MusicC
                     Done.Set(key, true, new MemoryCacheEntryOptions { Size = 1, AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(10) });
             }
             catch (Exception ex) when (ex is ProviderException or HttpRequestException or JsonException or IOException or OperationCanceledException)
-            { logger.LogDebug("StreamFin music: prefetch for {Track} did not complete ({ErrorType})", track.Id, ex.GetType().Name); }
+            { logger.LogDebug("JellySteamHub music: prefetch for {Track} did not complete ({ErrorType})", track.Id, ex.GetType().Name); }
             finally { if (acquired) Running.Release(); Pending.TryRemove(key, out _); }
         }, CancellationToken.None);
     }

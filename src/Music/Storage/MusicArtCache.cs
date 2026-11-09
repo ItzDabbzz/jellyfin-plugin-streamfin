@@ -97,7 +97,7 @@ public sealed class MusicArtCache(SafeHttp http, ILogger<MusicArtCache> logger)
         catch (Exception ex) when (ex is HttpRequestException or IOException or ProviderException or UriFormatException or UnauthorizedAccessException
             or OperationCanceledException)
         {
-            logger.LogInformation("StreamFin cover art not kept ({ErrorType})", ex.GetType().Name);
+            logger.LogInformation("JellySteamHub cover art not kept ({ErrorType})", ex.GetType().Name);
         }
         finally
         {
@@ -143,7 +143,7 @@ public sealed class MusicArtCache(SafeHttp http, ILogger<MusicArtCache> logger)
         // Image libraries fail in many ways on odd files; the original cover still goes out.
         catch (Exception ex) when (ex is not OutOfMemoryException)
         {
-            logger.LogInformation("StreamFin cover art not resized ({ErrorType})", ex.GetType().Name);
+            logger.LogInformation("JellySteamHub cover art not resized ({ErrorType})", ex.GetType().Name);
             return null;
         }
         finally
@@ -166,6 +166,6 @@ public sealed class MusicArtCache(SafeHttp http, ILogger<MusicArtCache> logger)
                 if ((total += file.Length) > ByteLimit) file.Delete();
             }
         }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { logger.LogInformation("StreamFin cover art could not be trimmed ({ErrorType})", ex.GetType().Name); }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { logger.LogInformation("JellySteamHub cover art could not be trimmed ({ErrorType})", ex.GetType().Name); }
     }
 }

@@ -16,7 +16,7 @@ namespace StreamFin;
 public sealed class OnlineSearch(AniListCatalog catalog, ILibraryManager library, SearchHistory history, IHttpContextAccessor contexts,
     IAuthorizationContext authorization, ILogger<OnlineSearch> logger) : IInternalSearchProvider
 {
-    public string Name => "StreamFin";
+    public string Name => "JellySteamHub";
     public MetadataPluginType Type => MetadataPluginType.SearchProvider;
     public int Priority => 50;
     public Guid ChannelId => library.GetNewItemId("Channel Anime", typeof(Channel));
@@ -82,7 +82,7 @@ public sealed class OnlineSearch(AniListCatalog catalog, ILibraryManager library
         catch (OperationCanceledException) when (ct.IsCancellationRequested) { return []; }
         catch (Exception ex) when (ex is ProviderException or HttpRequestException or System.Text.RegularExpressions.RegexMatchTimeoutException or UriFormatException or System.Text.Json.JsonException or OperationCanceledException && !ct.IsCancellationRequested)
         {
-            logger.LogWarning("StreamFin online search unavailable ({ErrorType}); local search remains available", ex.GetType().Name);
+            logger.LogWarning("JellySteamHub online search unavailable ({ErrorType}); local search remains available", ex.GetType().Name);
             return [];
         }
     }

@@ -67,7 +67,7 @@ public sealed partial class SubsonicController(SubsonicAuth auth, MusicCatalog c
         // The method comes from the address; line breaks in it could fake extra log entries.
         var logged = (name.Length > 40 ? name[..40] : name).Replace("\r", "", StringComparison.Ordinal).Replace("\n", "", StringComparison.Ordinal);
         parameters = Request.Query.ToDictionary(q => q.Key, q => q.Value.OfType<string>().ToArray(), StringComparer.Ordinal);
-        if (!SubsonicAuth.Enabled) { await SendAsync(SubsonicResponse.Error(50, "The Subsonic API is turned off in the StreamFin settings.")); return; }
+        if (!SubsonicAuth.Enabled) { await SendAsync(SubsonicResponse.Error(50, "The Subsonic API is turned off in the JellySteamHub settings.")); return; }
         try
         {
             // OpenSubsonic: apps ask what the server supports before they sign in. It is the same fixed list for everyone.
@@ -97,7 +97,7 @@ public sealed partial class SubsonicController(SubsonicAuth auth, MusicCatalog c
         }
         catch (SubsonicError error)
         {
-            logger.LogWarning("StreamFin Subsonic {Method} stopped: {Message}", logged, error.Message);
+            logger.LogWarning("JellySteamHub Subsonic {Method} stopped: {Message}", logged, error.Message);
             HttpContext.Abort();
         }
         catch (BadHttpRequestException) when (!Response.HasStarted) { await SendAsync(SubsonicResponse.Error(0, "The request could not be read.")); }
@@ -105,7 +105,7 @@ public sealed partial class SubsonicController(SubsonicAuth auth, MusicCatalog c
             or IOException or OperationCanceledException)
         {
             if (HttpContext.RequestAborted.IsCancellationRequested) return;
-            logger.LogWarning("StreamFin Subsonic {Method} failed ({ErrorType})", logged, ex.GetType().Name);
+            logger.LogWarning("JellySteamHub Subsonic {Method} failed ({ErrorType})", logged, ex.GetType().Name);
             // Headers may promise a length and a range already; the error replaces them. Once bytes have gone out, the
             // only honest answer is to cut the connection: a short body under a full length would read as the whole song.
             if (Response.HasStarted) { HttpContext.Abort(); return; }
@@ -148,7 +148,7 @@ public sealed partial class SubsonicController(SubsonicAuth auth, MusicCatalog c
         "getLicense" => Done(Success().One(new SubsonicNode("license").Set("valid", true))),
         "getOpenSubsonicExtensions" => Done(Extensions()),
         "tokenInfo" => Done(Success().One(new SubsonicNode("tokenInfo").Set("username", user.Name))),
-        "getMusicFolders" => Done(Success().One(new SubsonicNode("musicFolders").Add(new SubsonicNode("musicFolder").Set("id", 1).Set("name", "StreamFin")))),
+        "getMusicFolders" => Done(Success().One(new SubsonicNode("musicFolders").Add(new SubsonicNode("musicFolder").Set("id", 1).Set("name", "JellySteamHub")))),
         "getUser" => Done(One("username") is { } asked && !string.Equals(asked, user.Name, StringComparison.OrdinalIgnoreCase)
             ? SubsonicResponse.Error(50, "Only your own account can be looked up.") : Success().One(UserNode())),
         "getScanStatus" or "startScan" => Done(Success().One(new SubsonicNode("scanStatus").Set("scanning", false).Set("count", 0))),

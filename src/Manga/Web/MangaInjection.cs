@@ -48,9 +48,9 @@ public sealed class MangaInjectionService(ILogger<MangaInjectionService> logger)
         for (var attempt = 0; attempt < 60 && !stoppingToken.IsCancellationRequested; attempt++)
         {
             try { if (MangaInjection.Register()) return; }
-            catch (Exception ex) { logger.LogWarning(ex, "StreamFin manga page injection could not register yet"); }
+            catch (Exception ex) { logger.LogWarning(ex, "JellySteamHub manga page injection could not register yet"); }
             await Task.Delay(TimeSpan.FromSeconds(2), stoppingToken);
         }
-        logger.LogInformation("The optional StreamFin manga header shortcut needs the File Transformation plugin; the Manga page in the main menu works without it.");
+        logger.LogInformation("The optional JellySteamHub manga header shortcut needs the File Transformation plugin; the Manga page in the main menu works without it.");
     }
 }

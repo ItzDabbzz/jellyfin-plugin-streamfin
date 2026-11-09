@@ -96,8 +96,8 @@ public sealed class CatalogBreaker(int limit = 3, TimeSpan? window = null, TimeS
             else if (++good >= Needed) (state, since, failures, changed) = (SourceHealth.Healthy, now, 0, SourceHealth.Healthy);
             else next = now + Spacing;
         }
-        if (changed == SourceHealth.Recovering) Logger?.LogInformation("StreamFin {Name} answered a check; using it again after {More} more", Name, Needed - 1);
-        else if (changed == SourceHealth.Healthy) Logger?.LogInformation("StreamFin {Name} answers again", Name);
+        if (changed == SourceHealth.Recovering) Logger?.LogInformation("JellySteamHub {Name} answered a check; using it again after {More} more", Name, Needed - 1);
+        else if (changed == SourceHealth.Healthy) Logger?.LogInformation("JellySteamHub {Name} answers again", Name);
         return changed is not null;
     }
 
@@ -121,7 +121,7 @@ public sealed class CatalogBreaker(int limit = 3, TimeSpan? window = null, TimeS
             wait = Backoff[step];
             next = now + wait;
         }
-        if (changed) Logger?.LogWarning("StreamFin {Name} is not responding ({Cause}); checking again in {Seconds} s", Name, cause, (int)wait.TotalSeconds);
+        if (changed) Logger?.LogWarning("JellySteamHub {Name} is not responding ({Cause}); checking again in {Seconds} s", Name, cause, (int)wait.TotalSeconds);
         return changed;
     }
 

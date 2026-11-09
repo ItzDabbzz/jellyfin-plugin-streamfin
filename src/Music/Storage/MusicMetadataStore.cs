@@ -64,7 +64,7 @@ public sealed class MusicMetadataStore(ILogger<MusicMetadataStore> logger)
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
-            logger.LogInformation("StreamFin music metadata not kept ({ErrorType})", ex.GetType().Name);
+            logger.LogInformation("JellySteamHub music metadata not kept ({ErrorType})", ex.GetType().Name);
             try { System.IO.File.Delete(temporary); } catch (Exception inner) when (inner is IOException or UnauthorizedAccessException) { }
             return;
         }
@@ -90,6 +90,6 @@ public sealed class MusicMetadataStore(ILogger<MusicMetadataStore> logger)
             foreach (var file in files.Where(f => f.Name.EndsWith(".json", StringComparison.Ordinal)).OrderByDescending(f => f.LastWriteTimeUtc))
                 if (++kept > FileLimit || (total += file.Length) > ByteLimit) file.Delete();
         }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { logger.LogInformation("StreamFin music metadata could not be trimmed ({ErrorType})", ex.GetType().Name); }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { logger.LogInformation("JellySteamHub music metadata could not be trimmed ({ErrorType})", ex.GetType().Name); }
     }
 }

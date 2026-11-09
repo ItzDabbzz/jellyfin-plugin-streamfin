@@ -58,7 +58,7 @@ public sealed class MusicUpgradeTask(MusicAudio sources, MusicCatalog catalog, M
             await Task.Delay(Pause, cancellationToken);
         }
         songs.Favour(ready);
-        if (started > 0) logger.LogInformation("StreamFin music: kept {Count} favourite songs ready as FLAC", started);
+        if (started > 0) logger.LogInformation("JellySteamHub music: kept {Count} favourite songs ready as FLAC", started);
         progress.Report(100);
     }
 

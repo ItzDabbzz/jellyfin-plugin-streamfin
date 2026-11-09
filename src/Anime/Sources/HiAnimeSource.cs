@@ -79,7 +79,7 @@ public sealed class HiAnimeSource(SafeHttp http) : IDirectAnimeSource
         var blob = Regex.Match(html, "window\\.__P\\s*=\\s*\"([A-Za-z0-9+/=]{16,})\"", RegexOptions.None, TimeSpan.FromSeconds(2));
         if (!blob.Success)
             throw new ProviderException(IsMissing(html) ? "HiAnime does not have this episode. Try another provider."
-                : "HiAnime changed its player page. Try another provider; StreamFin needs an update for this source.");
+                : "HiAnime changed its player page. Try another provider; JellySteamHub needs an update for this source.");
         JsonElement root;
         try { root = JsonDocument.Parse(Decode(blob.Groups[1].Value, key)).RootElement; }
         catch (JsonException) { throw new KeyChangedException(); }
