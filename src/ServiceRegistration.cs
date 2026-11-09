@@ -57,8 +57,20 @@ public sealed class ServiceRegistration : IPluginServiceRegistrator
         services.AddScoped<StreamingNavigation>();
         services.AddScoped<LibraryStreamingLinks>();
         services.AddScoped<ChannelAccessFilter>();
+        services.AddScoped<CatalogBrowseFilter>();
+        services.AddScoped<LyricsFilter>();
+        services.AddScoped<InstantMixFilter>();
+        services.AddScoped<ChannelNavigationFilter>();
         services.AddScoped<ArtworkAccess>();
-        services.Configure<MvcOptions>(options => options.Filters.AddService<ChannelAccessFilter>());
+        services.Configure<MvcOptions>(options =>
+        {
+            // Access first, then the feature overrides, then lazy channel navigation.
+            options.Filters.AddService<ChannelAccessFilter>(0);
+            options.Filters.AddService<CatalogBrowseFilter>(10);
+            options.Filters.AddService<LyricsFilter>(10);
+            options.Filters.AddService<InstantMixFilter>(10);
+            options.Filters.AddService<ChannelNavigationFilter>(20);
+        });
         // Manga subsystem: its own store, sources, download queue and optional File Transformation page injection.
         services.AddSingleton<StreamFin.Manga.Store>();
         services.AddSingleton<ISourceHttp, MangaHttp>();
